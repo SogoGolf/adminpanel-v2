@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club } from '../types';
+import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundSummary, RoundDetail, RoundsPaginatedResponse } from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository } from './interfaces';
 
 const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
@@ -119,5 +119,42 @@ export async function getAllGolfers(params: GetAllGolfersParams = {}): Promise<P
 
 export async function getClubs(): Promise<Club[]> {
   const response = await api.get<Club[]>('/clubs');
+  return response.data;
+}
+
+export interface GetAllRoundsParams {
+  page?: number;
+  pageSize?: number;
+  golferName?: string;
+  golflinkNo?: string;
+  clubName?: string;
+  state?: string;
+  compType?: string;
+  roundType?: string;
+  isSubmitted?: boolean;
+  roundDate?: string;
+}
+
+export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<RoundsPaginatedResponse> {
+  const { page = 1, pageSize = 20, golferName, golflinkNo, clubName, state, compType, roundType, isSubmitted, roundDate } = params;
+  const response = await api.get<RoundsPaginatedResponse>('/rounds/search', {
+    params: {
+      page,
+      pageSize,
+      golferName: golferName || undefined,
+      golflinkNo: golflinkNo || undefined,
+      clubName: clubName || undefined,
+      state: state || undefined,
+      compType: compType || undefined,
+      roundType: roundType || undefined,
+      isSubmitted: isSubmitted !== undefined ? isSubmitted : undefined,
+      roundDate: roundDate || undefined,
+    },
+  });
+  return response.data;
+}
+
+export async function getRoundById(id: string): Promise<RoundDetail> {
+  const response = await api.get<RoundDetail>(`/rounds/${id}`);
   return response.data;
 }

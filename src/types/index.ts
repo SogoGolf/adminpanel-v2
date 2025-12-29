@@ -82,3 +82,63 @@ export interface Club {
     name: string;
   };
 }
+
+export interface RoundSummary {
+  id: string;
+  roundDate: string | null;
+  startTime: string | null;
+  golferFirstName: string | null;
+  golferLastName: string | null;
+  golflinkNo: string | null;
+  clubName: string | null;
+  clubState: string | null;
+  compType: string | null;
+  roundType: string | null;
+  dailyHandicap: number | null;
+  golfLinkHandicap: number | null;
+  compScoreTotal: number | null;
+  holeCount: number;
+  completedHoleCount: number;
+  isSubmitted: boolean | null;
+}
+
+export interface RoundsPaginatedResponse extends PaginatedResponse<RoundSummary> {
+  todayInProgressCount: number;
+  todaySubmittedCount: number;
+}
+
+export interface HoleScore {
+  holeNumber: number;
+  strokes: number;
+  score: number;
+  par: number;
+  index1?: number;
+  index2?: number;
+  index3?: number;
+  meters?: number;
+}
+
+export interface RoundDetail {
+  id: string;
+  roundDate?: string;
+  golferFirstName?: string;
+  golferLastName?: string;
+  golflinkNo?: string;
+  clubName?: string;
+  clubState?: { shortName: string };
+  compType?: string;
+  roundType?: string;
+  teeColor?: string;
+  dailyHandicap?: number;
+  golfLinkHandicap?: number;
+  scratchRating?: number;
+  slopeRating?: number;
+  compScoreTotal?: number;
+  isSubmitted?: boolean;
+  holeScores?: HoleScore[];
+  playingPartnerRound?: {
+    golferFirstName?: string;
+    golferLastName?: string;
+    holeScores?: HoleScore[];
+  };
+}

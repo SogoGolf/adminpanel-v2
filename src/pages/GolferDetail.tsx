@@ -328,6 +328,122 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
   );
 }
 
+// Mobile card component for round display in golfer detail
+function RoundCardMobile({
+  round,
+  isExpanded,
+  onToggle,
+  calculateTotalStrokes,
+  calculateTotalScore,
+}: {
+  round: ApiRound;
+  isExpanded: boolean;
+  onToggle: () => void;
+  calculateTotalStrokes: (holeScores?: ApiRound['holeScores']) => string | number;
+  calculateTotalScore: (holeScores?: ApiRound['holeScores']) => string | number;
+}) {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return '-';
+    }
+  };
+
+  const markerName = (() => {
+    const firstName = round.playingPartnerRound?.golferFirstName || round.markerFirstName;
+    const lastName = round.playingPartnerRound?.golferLastName || round.markerLastName;
+    return firstName || lastName ? `${firstName || ''} ${lastName || ''}`.trim() : null;
+  })();
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4 space-y-2">
+      {/* Header row with date and status */}
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-gray-900">{formatDate(round.roundDate)}</span>
+        <div className="flex items-center gap-2">
+          {round.isSubmitted ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Submitted
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+              Not Submitted
+            </span>
+          )}
+          <button
+            onClick={onToggle}
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            {isExpanded ? 'Hide' : 'Details'}
+          </button>
+        </div>
+      </div>
+
+      {/* Club and type */}
+      <div className="text-sm text-gray-600">
+        {round.clubName || '-'}
+        {round.compType && ` • ${round.compType}`}
+        {round.teeColor && ` • ${round.teeColor} tee`}
+      </div>
+
+      {/* Stats row */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <span className="text-gray-500">
+          HCP: <span className="text-gray-900">{round.dailyHandicap?.toFixed(1) ?? '-'}</span>
+        </span>
+        <span className="text-gray-500">
+          Strokes: <span className="text-gray-900">{calculateTotalStrokes(round.holeScores)}</span>
+        </span>
+        <span className="text-gray-500">
+          Score: <span className="text-green-600 font-medium">{calculateTotalScore(round.holeScores)}</span>
+        </span>
+      </div>
+
+      {/* Course rating row */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <span className="text-gray-500">
+          Scratch: <span className="text-gray-900">{round.scratchRating?.toFixed(1) ?? '-'}</span>
+        </span>
+        <span className="text-gray-500">
+          Slope: <span className="text-gray-900">{round.slopeRating?.toFixed(1) ?? '-'}</span>
+        </span>
+        {markerName && (
+          <span className="text-gray-500">
+            Marker: <span className="text-gray-900">{markerName}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Expanded scorecard */}
+      {isExpanded && round.holeScores && round.holeScores.length > 0 && (
+        <div className="pt-3 border-t border-gray-200 mt-3">
+          <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto">
+            {/* Golfer's scorecard */}
+            <div>
+              <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                {round.golferFirstName || ''} {round.golferLastName || 'Golfer'}
+              </h4>
+              <ScorecardTable holeScores={round.holeScores} />
+            </div>
+
+            {/* Playing partner's scorecard */}
+            {round.playingPartnerRound?.holeScores && round.playingPartnerRound.holeScores.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                  {round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}
+                </h4>
+                <ScorecardTable holeScores={round.playingPartnerRound.holeScores} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Rounds Tab Component with server-side pagination
 function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
   const [page, setPage] = useState(1);
@@ -409,7 +525,27 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
         )}
       </div>
 
-      <div className={`overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
+      {/* Mobile card view */}
+      <div className="lg:hidden space-y-3 relative">
+        {isFetching && (
+          <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 rounded-lg">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
+        )}
+        {data.data.map((round) => (
+          <RoundCardMobile
+            key={round.id}
+            round={round}
+            isExpanded={expandedRows.has(round.id)}
+            onToggle={() => toggleRow(round.id)}
+            calculateTotalStrokes={calculateTotalStrokes}
+            calculateTotalScore={calculateTotalScore}
+          />
+        ))}
+      </div>
+
+      {/* Desktop table view */}
+      <div className={`hidden lg:block overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -481,8 +617,8 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
                       Submitted
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                      In Progress
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Not Submitted
                     </span>
                   )}
                 </td>
@@ -491,7 +627,7 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
               {expandedRows.has(round.id) && round.holeScores && round.holeScores.length > 0 && (
                 <tr className="bg-gray-50">
                   <td colSpan={12} className="px-4 py-4">
-                    <div className="flex gap-8 flex-wrap">
+                    <div className="flex flex-col xl:flex-row gap-8">
                       {/* Golfer's scorecard */}
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900 mb-2">

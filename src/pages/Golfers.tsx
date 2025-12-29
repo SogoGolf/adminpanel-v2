@@ -94,6 +94,81 @@ function ColumnFilter({
   );
 }
 
+// Mobile card component for golfer display
+function GolferCard({
+  golfer,
+  getClubName,
+}: {
+  golfer: Golfer;
+  getClubName: (golflinkNo?: string) => string;
+}) {
+  const name = `${golfer.firstName || ''} ${golfer.lastName || ''}`.trim() || '-';
+  const clubName = getClubName(golfer.golflinkNo);
+  const roundCount = (golfer as Golfer & { roundCount?: number }).roundCount ?? 0;
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return '-';
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow p-4 space-y-2">
+      {/* Header row with name and info link */}
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to={`/golfers/${golfer.golflinkNo}`}
+          className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
+        >
+          {name}
+        </Link>
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+            golfer.tokenBalance > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          }`}
+        >
+          {golfer.tokenBalance} tokens
+        </span>
+      </div>
+
+      {/* Email */}
+      {golfer.email && (
+        <div className="text-sm text-gray-600 truncate">
+          {golfer.email}
+        </div>
+      )}
+
+      {/* Details row */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <span className="text-gray-500">
+          GA: <span className="font-mono text-gray-900">{golfer.golflinkNo || '-'}</span>
+        </span>
+        {golfer.state?.shortName && (
+          <span className="text-gray-500">
+            State: <span className="text-gray-900">{golfer.state.shortName.toUpperCase()}</span>
+          </span>
+        )}
+      </div>
+
+      {/* Club and stats row */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <span className="text-gray-500">
+          Club: <span className="text-gray-900">{clubName}</span>
+        </span>
+        <span className="text-gray-500">
+          Rounds: <span className="text-gray-900">{roundCount}</span>
+        </span>
+        <span className="text-gray-500">
+          Since: <span className="text-gray-900">{formatDate(golfer.memberSince)}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const STORAGE_KEY = 'golfers-filters';
 
 function getInitialFilters(): ColumnFiltersState {
@@ -355,7 +430,93 @@ export function Golfers() {
             )}
           </div>
 
-          <div className={`bg-white rounded-lg shadow overflow-hidden transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
+          {/* Mobile filters */}
+          <div className="lg:hidden bg-white rounded-lg shadow p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">First Name</label>
+                <input
+                  type="text"
+                  value={getFilterValue('firstName')}
+                  onChange={(e) => handleFilterChange('firstName', e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+                <input
+                  type="text"
+                  value={getFilterValue('lastName')}
+                  onChange={(e) => handleFilterChange('lastName', e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">GA Number</label>
+                <input
+                  type="text"
+                  value={getFilterValue('golflinkNo')}
+                  onChange={(e) => handleFilterChange('golflinkNo', e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">State</label>
+                <select
+                  value={getFilterValue('state')}
+                  onChange={(e) => handleFilterChange('state', e.target.value)}
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="">All</option>
+                  {stateOptions.map((state) => (
+                    <option key={state} value={state}>{state}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                <input
+                  type="text"
+                  value={getFilterValue('email')}
+                  onChange={(e) => handleFilterChange('email', e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Club</label>
+                <input
+                  type="text"
+                  value={getFilterValue('clubName')}
+                  onChange={(e) => handleFilterChange('clubName', e.target.value)}
+                  placeholder="Search..."
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile card view */}
+          <div className="lg:hidden space-y-3 relative">
+            {isFetching && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 rounded-lg">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+            {data.data.map((golfer) => (
+              <GolferCard
+                key={golfer.id}
+                golfer={golfer}
+                getClubName={getClubName}
+              />
+            ))}
+          </div>
+
+          {/* Desktop table view */}
+          <div className={`hidden lg:block bg-white rounded-lg shadow overflow-hidden transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">

@@ -7,6 +7,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { GolferLookup } from './pages/GolferLookup';
 import { Golfers } from './pages/Golfers';
 import { GolferDetail } from './pages/GolferDetail';
+import { Rounds } from './pages/Rounds';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
@@ -29,6 +30,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const menuItems = [
     { path: '/', label: 'Golfer Lookup' },
     { path: '/golfers', label: 'Golfers' },
+    { path: '/rounds', label: 'Rounds' },
   ];
 
   return (
@@ -156,6 +158,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <GolferDetail />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/rounds"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Rounds />
             </Layout>
           </ProtectedRoute>
         }
