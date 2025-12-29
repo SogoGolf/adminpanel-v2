@@ -33,7 +33,7 @@ export const defaultTenant: TenantConfig = {
   primaryColor: '#1f2937',
   features: {
     canAddTokens: true,
-    canViewRounds: true,
+    canViewRounds: false,
   },
 };
 
