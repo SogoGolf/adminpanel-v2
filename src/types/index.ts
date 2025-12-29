@@ -63,3 +63,22 @@ export interface TenantConfig {
   primaryColor: string;
   features: TenantFeatures;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
+
+export interface Club {
+  id: string;
+  type: 'club';
+  name: string;
+  glClubId: number;
+  state?: {
+    shortName: string;
+    name: string;
+  };
+}

@@ -1,17 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
-import {
-  getGolferByGolflinkNo,
-  getTransactionsForGolfer,
-  getTransactionTypes,
-  addTransaction,
-} from '../api/cosmosdb';
+import { golferService, transactionService } from '../services';
 import { TransactionTable } from '../components/TransactionTable';
 import { AddTokensDialog } from '../components/AddTokensDialog';
 import { useFeature } from '../contexts/TenantContext';
-import type { Transaction } from '../types';
 
 export function GolferLookup() {
   const queryClient = useQueryClient();
@@ -40,43 +33,53 @@ export function GolferLookup() {
     error,
   } = useQuery({
     queryKey: ['golfer', searchTerm],
-    queryFn: () => getGolferByGolflinkNo(searchTerm),
+    queryFn: () => golferService.getByGolflinkNo(searchTerm),
     enabled: !!searchTerm,
   });
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
     queryKey: ['transactions', golfer?.id],
-    queryFn: () => getTransactionsForGolfer(golfer!.id),
+    queryFn: () => transactionService.getForGolfer(golfer!.id),
     enabled: !!golfer?.id,
   });
 
   // Fetch transaction types (filtered to Admin Credit/Debit only)
   const { data: transactionTypes = [] } = useQuery({
     queryKey: ['transactionTypes'],
-    queryFn: async () => {
-      const types = await getTransactionTypes();
-      return types.filter(t =>
-        t.name === 'Admin Credit' || t.name === 'Admin Debit'
-      );
-    },
+    queryFn: () => transactionService.getAdminTypes(),
   });
 
   // Add transaction mutation
   const addTransactionMutation = useMutation({
-    mutationFn: addTransaction,
+    mutationFn: async ({
+      transactionTypeId,
+      amount,
+    }: {
+      transactionTypeId: string;
+      amount: number;
+    }) => {
+      if (!golfer || currentBalance === null) {
+        throw new Error('Golfer or balance not available');
+      }
+
+      const transactionType = transactionTypes.find((t) => t.id === transactionTypeId);
+      if (!transactionType) {
+        throw new Error('Transaction type not found');
+      }
+
+      return transactionService.addTransaction(golfer, transactionType, amount, currentBalance);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', golfer?.id] });
       setDialogOpen(false);
     },
   });
 
-  // Get balance from latest transaction, fallback to golfer.tokenBalance
-  const currentBalance = transactionsLoading
+  // Get balance using service
+  const currentBalance = transactionsLoading || !golfer
     ? null
-    : transactions && transactions.length > 0
-      ? transactions[0].availableTokens
-      : golfer?.tokenBalance ?? 0;
+    : transactionService.getCurrentBalance(transactions, golfer);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,36 +95,7 @@ export function GolferLookup() {
   };
 
   const handleAddTokens = (transactionTypeId: string, amount: number) => {
-    if (!golfer || currentBalance === null) return;
-
-    const transactionType = transactionTypes.find((t) => t.id === transactionTypeId);
-    if (!transactionType) return;
-
-    const newBalance = transactionType.debitOrCredit === 'credit'
-      ? currentBalance + amount
-      : currentBalance - amount;
-
-    const transaction: Transaction = {
-      id: uuidv4(),
-      type: 'transaction',
-      golferId: golfer.id,
-      golferEmail: golfer.email,
-      golferFirstName: golfer.firstName,
-      golferLastName: golfer.lastName,
-      transactionDate: new Date().toISOString(),
-      transactionValue: amount,
-      availableTokens: newBalance,
-      transactionType: {
-        id: transactionType.id,
-        type: 'transactionType',
-        name: transactionType.name,
-        shortDescription: transactionType.shortDescription,
-        debitOrCredit: transactionType.debitOrCredit,
-      },
-      createdDate: new Date().toISOString(),
-    };
-
-    addTransactionMutation.mutate(transaction);
+    addTransactionMutation.mutate({ transactionTypeId, amount });
   };
 
   return (

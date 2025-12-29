@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { GolferLookup } from './pages/GolferLookup';
+import { Golfers } from './pages/Golfers';
+import { GolferDetail } from './pages/GolferDetail';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
@@ -26,7 +28,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   const menuItems = [
     { path: '/', label: 'Golfer Lookup' },
-    // Add more menu items here as needed
+    { path: '/golfers', label: 'Golfers' },
   ];
 
   return (
@@ -134,6 +136,26 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <GolferLookup />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/golfers"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Golfers />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/golfers/:id"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <GolferDetail />
             </Layout>
           </ProtectedRoute>
         }
