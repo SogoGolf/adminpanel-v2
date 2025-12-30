@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
@@ -8,9 +8,18 @@ import { GolferLookup } from './pages/GolferLookup';
 import { Golfers } from './pages/Golfers';
 import { GolferDetail } from './pages/GolferDetail';
 import { Rounds } from './pages/Rounds';
+import { AdminUsers } from './pages/AdminUsers';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
+
+// Map features to menu items
+const allMenuItems = [
+  { path: '/', label: 'Golfer Lookup', feature: 'golfer-lookup' },
+  { path: '/golfers', label: 'Golfers', feature: 'golfers' },
+  { path: '/rounds', label: 'Rounds', feature: 'rounds' },
+  { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
+];
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,16 +31,13 @@ const queryClient = new QueryClient({
 });
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { user, signOut } = useAuth();
+  const { user, adminUser, signOut, hasFeature } = useAuth();
   const tenant = useTenant();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const menuItems = [
-    { path: '/', label: 'Golfer Lookup' },
-    { path: '/golfers', label: 'Golfers' },
-    { path: '/rounds', label: 'Rounds' },
-  ];
+  // Filter menu items based on user's features
+  const menuItems = allMenuItems.filter(item => hasFeature(item.feature));
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -83,9 +89,13 @@ function Layout({ children }: { children: React.ReactNode }) {
             ))}
           </ul>
         </nav>
-        {user && (
+        {user && adminUser && (
           <div className="p-4 border-t border-white/20">
-            <p className="text-sm text-white/70 truncate mb-2">{user.email}</p>
+            <p className="text-sm font-medium text-white truncate">{adminUser.name}</p>
+            <p className="text-xs text-white/60 truncate mb-1">{user.email}</p>
+            <p className="text-xs text-white/40 capitalize mb-2">
+              {adminUser.role.replace('_', ' ')}
+            </p>
             <button
               onClick={() => setShowSignOutDialog(true)}
               className="text-sm text-red-300 hover:text-red-200 transition-colors"
@@ -120,7 +130,23 @@ function Layout({ children }: { children: React.ReactNode }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <h2 className="text-xl font-semibold text-gray-800">{tenant.name}</h2>
+          {adminUser?.role === 'super_admin' ? (
+            <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L4 6v6c0 5.25 3.4 10.15 8 11.5 4.6-1.35 8-6.25 8-11.5V6l-8-4z" fill="url(#shieldGradient)" stroke="#991b1b" strokeWidth="1"/>
+              <path d="M10 12l2 2 4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <defs>
+                <linearGradient id="shieldGradient" x1="12" y1="2" x2="12" y2="19.5" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#ef4444"/>
+                  <stop offset="1" stopColor="#991b1b"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          ) : adminUser?.logoUrl ? (
+            <img src={adminUser.logoUrl} alt={adminUser.name} className="h-10" />
+          ) : null}
+          <h2 className={`text-2xl font-bold ${adminUser?.role === 'super_admin' ? 'text-red-700' : 'text-blue-700'}`}>
+            {adminUser?.name || tenant.name}
+          </h2>
         </header>
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
@@ -135,7 +161,7 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredFeature="golfer-lookup">
             <Layout>
               <GolferLookup />
             </Layout>
@@ -145,7 +171,7 @@ function AppRoutes() {
       <Route
         path="/golfers"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredFeature="golfers">
             <Layout>
               <Golfers />
             </Layout>
@@ -155,7 +181,7 @@ function AppRoutes() {
       <Route
         path="/golfers/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredFeature="golfers">
             <Layout>
               <GolferDetail />
             </Layout>
@@ -165,13 +191,25 @@ function AppRoutes() {
       <Route
         path="/rounds"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requiredFeature="rounds">
             <Layout>
               <Rounds />
             </Layout>
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/admin/users"
+        element={
+          <ProtectedRoute requiredFeature="admin-users">
+            <Layout>
+              <AdminUsers />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      {/* Redirect unknown routes to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

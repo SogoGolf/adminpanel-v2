@@ -8,6 +8,7 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { getAllRounds, getRoundById } from '../api/mongodb';
+import { useAuth } from '../contexts/AuthContext';
 import type { RoundSummary, HoleScore } from '../types';
 
 type ColumnFilter = { id: string; value: unknown };
@@ -195,7 +196,7 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
 }
 
 // Check if round is from today (local time)
-function isToday(dateString?: string): boolean {
+function isToday(dateString?: string | null): boolean {
   if (!dateString) return false;
   const roundDate = new Date(dateString);
   const today = new Date();
@@ -366,12 +367,12 @@ function RoundCard({
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
         {round.roundType && (
           <span className="text-gray-500">
-            Type: <span className="text-gray-900">{round.roundType}</span>
+            Type: <span className="text-gray-900">{round.roundType.charAt(0).toUpperCase() + round.roundType.slice(1).toLowerCase()}</span>
           </span>
         )}
         {round.compType && (
           <span className="text-gray-500">
-            Comp: <span className="text-gray-900">{round.compType}</span>
+            Comp: <span className="text-gray-900">{round.compType.charAt(0).toUpperCase() + round.compType.slice(1).toLowerCase()}</span>
           </span>
         )}
         <span className="text-gray-500">
@@ -411,6 +412,7 @@ function getInitialFilters(): ColumnFiltersState {
 }
 
 export function Rounds() {
+  const { adminUser } = useAuth();
   const pageSize = 20;
 
   const [page, setPage] = useState(1);
@@ -450,8 +452,11 @@ export function Rounds() {
     return params;
   }, [debouncedFilters]);
 
+  // Get clubIds from admin user for multi-tenant filtering
+  const clubIds = adminUser?.clubIds;
+
   const { data, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ['rounds', page, pageSize, filterParams],
+    queryKey: ['rounds', page, pageSize, filterParams, clubIds],
     queryFn: () => getAllRounds({
       page,
       pageSize,
@@ -463,6 +468,7 @@ export function Rounds() {
       roundType: filterParams.roundType,
       isSubmitted: filterParams.isSubmitted === 'true' ? true : filterParams.isSubmitted === 'false' ? false : undefined,
       roundDate: filterParams.roundDate,
+      clubIds,
     }),
     placeholderData: keepPreviousData,
   });
@@ -610,11 +616,17 @@ export function Rounds() {
       }),
       columnHelper.accessor('roundType', {
         header: 'Type',
-        cell: (info) => info.getValue() || '-',
+        cell: (info) => {
+          const value = info.getValue();
+          return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : '-';
+        },
       }),
       columnHelper.accessor('compType', {
         header: 'Comp',
-        cell: (info) => info.getValue() || '-',
+        cell: (info) => {
+          const value = info.getValue();
+          return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : '-';
+        },
       }),
       columnHelper.accessor('dailyHandicap', {
         header: 'HCP',

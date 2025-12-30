@@ -8,6 +8,7 @@ import {
   createColumnHelper,
 } from '@tanstack/react-table';
 import { getAllGolfers, getClubs } from '../api/mongodb';
+import { useAuth } from '../contexts/AuthContext';
 import type { Golfer } from '../types';
 
 type ColumnFilter = { id: string; value: unknown };
@@ -186,6 +187,7 @@ function getInitialFilters(): ColumnFiltersState {
 }
 
 export function Golfers() {
+  const { adminUser } = useAuth();
   const pageSize = 20;
 
   // Initialize state - filters from sessionStorage, page always starts at 1
@@ -216,9 +218,12 @@ export function Golfers() {
     return params;
   }, [debouncedFilters]);
 
+  // Get clubIds from admin user for multi-tenant filtering
+  const clubIds = adminUser?.clubIds;
+
   const { data, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ['golfers', page, pageSize, filterParams],
-    queryFn: () => getAllGolfers({ page, pageSize, ...filterParams }),
+    queryKey: ['golfers', page, pageSize, filterParams, clubIds],
+    queryFn: () => getAllGolfers({ page, pageSize, ...filterParams, clubIds }),
     placeholderData: keepPreviousData,
   });
 
