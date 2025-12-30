@@ -8,6 +8,7 @@ import { GolferLookup } from './pages/GolferLookup';
 import { Golfers } from './pages/Golfers';
 import { GolferDetail } from './pages/GolferDetail';
 import { Rounds } from './pages/Rounds';
+import { Notifications } from './pages/Notifications';
 import { AdminUsers } from './pages/AdminUsers';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -18,6 +19,7 @@ const allMenuItems = [
   { path: '/', label: 'Golfer Lookup', feature: 'golfer-lookup' },
   { path: '/golfers', label: 'Golfers', feature: 'golfers' },
   { path: '/rounds', label: 'Rounds', feature: 'rounds' },
+  { path: '/notifications', label: 'Notifications', feature: 'notifications' },
   { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
 ];
 
@@ -194,6 +196,16 @@ function AppRoutes() {
           <ProtectedRoute requiredFeature="rounds">
             <Layout>
               <Rounds />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <ProtectedRoute requiredFeature="notifications">
+            <Layout>
+              <Notifications />
             </Layout>
           </ProtectedRoute>
         }

@@ -10,6 +10,7 @@ const AVAILABLE_FEATURES = [
   { id: 'golfer-lookup', label: 'Golfer Lookup' },
   { id: 'golfers', label: 'Golfers' },
   { id: 'rounds', label: 'Rounds' },
+  { id: 'notifications', label: 'Notifications' },
   { id: 'admin-users', label: 'Admin Users' },
 ];
 

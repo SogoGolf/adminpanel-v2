@@ -6,6 +6,7 @@ const featureRoutes: Record<string, string> = {
   'golfer-lookup': '/',
   'golfers': '/golfers',
   'rounds': '/rounds',
+  'notifications': '/notifications',
   'admin-users': '/admin/users',
 };
 

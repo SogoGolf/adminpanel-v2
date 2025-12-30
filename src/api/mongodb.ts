@@ -162,3 +162,76 @@ export async function getRoundById(id: string): Promise<RoundDetail> {
   const response = await api.get<RoundDetail>(`/rounds/${id}`);
   return response.data;
 }
+
+// Notification API functions
+export interface AudienceCountParams {
+  audienceType: 'rounds-in-progress' | 'gender' | 'club' | 'state' | 'single';
+  gender?: string;
+  clubId?: string;
+  state?: string;
+  golflinkNo?: string;
+  clubIds?: string[];
+  requestingUserEmail: string;
+}
+
+export interface AudienceCountResponse {
+  count: number;
+  emails: string[];
+}
+
+export async function getNotificationAudienceCount(params: AudienceCountParams): Promise<AudienceCountResponse> {
+  const { audienceType, gender, clubId, state, golflinkNo, clubIds, requestingUserEmail } = params;
+  const response = await api.get<AudienceCountResponse>('/notifications/audience-count', {
+    params: {
+      audienceType,
+      gender: gender || undefined,
+      clubId: clubId || undefined,
+      state: state || undefined,
+      golflinkNo: golflinkNo || undefined,
+      clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
+      requestingUserEmail,
+    },
+  });
+  return response.data;
+}
+
+export interface SendNotificationParams {
+  title: string;
+  message: string;
+  audienceType: 'rounds-in-progress' | 'gender' | 'club' | 'state' | 'single';
+  gender?: string;
+  clubId?: string;
+  state?: string;
+  golflinkNo?: string;
+  clubIds?: string[];
+  requestingUserEmail: string;
+}
+
+export interface SendNotificationResponse {
+  success: boolean;
+  message: string;
+  recipientCount: number;
+  oneSignalResponse?: string;
+}
+
+export async function sendNotification(params: SendNotificationParams): Promise<SendNotificationResponse> {
+  const { title, message, audienceType, gender, clubId, state, golflinkNo, clubIds, requestingUserEmail } = params;
+  const response = await api.post<SendNotificationResponse>('/notifications/send',
+    {
+      title,
+      message,
+      audienceType,
+      gender: gender || undefined,
+      clubId: clubId || undefined,
+      state: state || undefined,
+      golflinkNo: golflinkNo || undefined,
+    },
+    {
+      params: {
+        requestingUserEmail,
+        clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
+      },
+    }
+  );
+  return response.data;
+}
