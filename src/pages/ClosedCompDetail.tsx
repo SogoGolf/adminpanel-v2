@@ -12,7 +12,6 @@ import {
   updateClosedComp,
   getRoundById,
   searchGolfers,
-  inviteParticipant,
 } from '../api/mongodb';
 import type { UpdateClosedCompParams } from '../api/mongodb';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -181,8 +180,8 @@ export function ClosedCompDetail() {
   const [inviteSearch, setInviteSearch] = useState('');
   const [inviteState, setInviteState] = useState('');
   const [invitePage, setInvitePage] = useState(1);
-  const [_inviteResults, setInviteResults] = useState<Golfer[]>([]);
-  const [_inviteTotalPages, setInviteTotalPages] = useState(0);
+  const [, setInviteResults] = useState<Golfer[]>([]);
+  const [, setInviteTotalPages] = useState(0);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
 
@@ -292,20 +291,6 @@ export function ClosedCompDetail() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['closedCompParticipants', id] });
       setShowUnblockAllDialog(false);
-    },
-  });
-
-  const _inviteMutation = useMutation({
-    mutationFn: (golferId: string) => inviteParticipant(id!, golferId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['closedCompParticipants', id] });
-      queryClient.invalidateQueries({ queryKey: ['closedComp', id] });
-      setInviteError('');
-      // Refresh search results to update "Already invited" state
-      handleInviteSearch();
-    },
-    onError: (error: Error) => {
-      setInviteError(error.message || 'Failed to invite golfer');
     },
   });
 
@@ -420,10 +405,6 @@ export function ClosedCompDetail() {
     setInviteResults([]);
     setInviteTotalPages(0);
     setInviteError('');
-  };
-
-  const _isGolferAlreadyParticipant = (golferId: string) => {
-    return participants.some(p => p.golferId === golferId);
   };
 
   const formatDate = (dateString: string | undefined) => {
