@@ -305,6 +305,7 @@ export interface CreateClosedCompParams {
   compTypes: string[];
   maxRounds: number;
   holesPerRound: number;
+  roundSelectionMode?: 'best' | 'first';
   prize?: string;
   startDate: string; // ISO date string
   endDate: string; // ISO date string
@@ -314,6 +315,22 @@ export interface CreateClosedCompParams {
 
 export async function createClosedComp(params: CreateClosedCompParams): Promise<ClosedComp> {
   const response = await api.post<ClosedComp>('/closedcomps', params);
+  return response.data;
+}
+
+export interface UpdateClosedCompParams {
+  name?: string;
+  prize?: string;
+  maxRounds?: number;
+  holesPerRound?: number;
+  roundSelectionMode?: 'best' | 'first';
+  startDate?: string; // ISO date string
+  endDate?: string; // ISO date string
+  timezone?: string;
+}
+
+export async function updateClosedComp(id: string, params: UpdateClosedCompParams): Promise<ClosedComp> {
+  const response = await api.patch<ClosedComp>(`/closedcomps/${id}`, params);
   return response.data;
 }
 

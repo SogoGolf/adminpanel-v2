@@ -156,6 +156,7 @@ export interface ClosedComp {
   compTypes: string[];
   maxRounds: number;
   holesPerRound: number;
+  roundSelectionMode: 'best' | 'first';
   prize?: string;
   startDate: string;
   endDate: string;

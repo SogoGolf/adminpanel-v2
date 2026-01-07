@@ -10,6 +10,7 @@ interface CreateCompForm {
   compType: string;
   maxRounds: number;
   holesPerRound: number;
+  roundSelectionMode: 'best' | 'first';
   prize: string;
   startDate: string;
   endDate: string;
@@ -21,6 +22,7 @@ const initialFormState: CreateCompForm = {
   compType: 'stableford',
   maxRounds: 3,
   holesPerRound: 18,
+  roundSelectionMode: 'best',
   prize: '',
   startDate: '',
   endDate: '',
@@ -150,6 +152,7 @@ export function ClosedComps() {
       compTypes: [form.compType],
       maxRounds: form.maxRounds,
       holesPerRound: form.holesPerRound,
+      roundSelectionMode: form.roundSelectionMode,
       prize: form.prize.trim() || undefined,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
@@ -448,6 +451,24 @@ export function ClosedComps() {
                     <option value={18}>18 Holes</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Round Selection Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Round Selection Mode</label>
+                <select
+                  value={form.roundSelectionMode}
+                  onChange={(e) => setForm({ ...form, roundSelectionMode: e.target.value as 'best' | 'first' })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="best">Best rounds - new rounds can replace worse ones</option>
+                  <option value="first">First submitted - lock in rounds, no replacements</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {form.roundSelectionMode === 'best'
+                    ? "Each player's best rounds are kept. If they submit a better round, it replaces their worst."
+                    : "Once a player reaches max rounds, no more can be added. First submitted rounds are final."}
+                </p>
               </div>
 
               {/* Start & End Date */}

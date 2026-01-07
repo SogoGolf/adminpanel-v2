@@ -9,10 +9,12 @@ import {
   updateClosedCompStatus,
   deleteClosedComp,
   updateParticipantStatus,
+  updateClosedComp,
   getRoundById,
   searchGolfers,
   inviteParticipant,
 } from '../api/mongodb';
+import type { UpdateClosedCompParams } from '../api/mongodb';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import type { ClosedCompParticipant, HoleScore, Golfer } from '../types';
 
@@ -179,10 +181,24 @@ export function ClosedCompDetail() {
   const [inviteSearch, setInviteSearch] = useState('');
   const [inviteState, setInviteState] = useState('');
   const [invitePage, setInvitePage] = useState(1);
-  const [inviteResults, setInviteResults] = useState<Golfer[]>([]);
-  const [inviteTotalPages, setInviteTotalPages] = useState(0);
+  const [_inviteResults, setInviteResults] = useState<Golfer[]>([]);
+  const [_inviteTotalPages, setInviteTotalPages] = useState(0);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState('');
+
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    prize: '',
+    maxRounds: 3,
+    holesPerRound: 18,
+    roundSelectionMode: 'best' as 'best' | 'first',
+    startDate: '',
+    endDate: '',
+    timezone: 'Australia/Sydney',
+  });
+  const [editError, setEditError] = useState('');
 
   const toggleRoundExpansion = (roundId: string) => {
     setExpandedRounds((prev) => {
@@ -279,7 +295,7 @@ export function ClosedCompDetail() {
     },
   });
 
-  const inviteMutation = useMutation({
+  const _inviteMutation = useMutation({
     mutationFn: (golferId: string) => inviteParticipant(id!, golferId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['closedCompParticipants', id] });
@@ -292,6 +308,84 @@ export function ClosedCompDetail() {
       setInviteError(error.message || 'Failed to invite golfer');
     },
   });
+
+  const editCompMutation = useMutation({
+    mutationFn: (params: UpdateClosedCompParams) => updateClosedComp(id!, params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['closedComp', id] });
+      setShowEditModal(false);
+      setEditError('');
+    },
+    onError: (error: Error) => {
+      setEditError(error.message || 'Failed to update competition');
+    },
+  });
+
+  const handleOpenEditModal = () => {
+    if (comp) {
+      // Format dates for date input (YYYY-MM-DD)
+      const formatDateForInput = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+      };
+
+      setEditForm({
+        name: comp.name,
+        prize: comp.prize || '',
+        maxRounds: comp.maxRounds,
+        holesPerRound: comp.holesPerRound,
+        roundSelectionMode: comp.roundSelectionMode || 'best',
+        startDate: formatDateForInput(comp.startDate),
+        endDate: formatDateForInput(comp.endDate),
+        timezone: comp.timezone,
+      });
+      setEditError('');
+      setShowEditModal(true);
+    }
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError('');
+
+    // Validation
+    if (!editForm.name.trim()) {
+      setEditError('Name is required');
+      return;
+    }
+    if (editForm.maxRounds < 1) {
+      setEditError('Max rounds must be at least 1');
+      return;
+    }
+    if (new Date(editForm.startDate) >= new Date(editForm.endDate)) {
+      setEditError('End date must be after start date');
+      return;
+    }
+
+    // Build params object with only changed fields
+    const params: UpdateClosedCompParams = {};
+    if (editForm.name !== comp?.name) params.name = editForm.name;
+    if (editForm.prize !== (comp?.prize || '')) params.prize = editForm.prize;
+    if (editForm.maxRounds !== comp?.maxRounds) params.maxRounds = editForm.maxRounds;
+    if (editForm.holesPerRound !== comp?.holesPerRound) params.holesPerRound = editForm.holesPerRound;
+    if (editForm.roundSelectionMode !== (comp?.roundSelectionMode || 'best')) params.roundSelectionMode = editForm.roundSelectionMode;
+    if (editForm.timezone !== comp?.timezone) params.timezone = editForm.timezone;
+
+    // Format dates to ISO string for API
+    const formatDateForApi = (dateStr: string) => new Date(dateStr).toISOString();
+    const currentStartDate = comp?.startDate ? new Date(comp.startDate).toISOString().split('T')[0] : '';
+    const currentEndDate = comp?.endDate ? new Date(comp.endDate).toISOString().split('T')[0] : '';
+
+    if (editForm.startDate !== currentStartDate) params.startDate = formatDateForApi(editForm.startDate);
+    if (editForm.endDate !== currentEndDate) params.endDate = formatDateForApi(editForm.endDate);
+
+    if (Object.keys(params).length === 0) {
+      setEditError('No changes to save');
+      return;
+    }
+
+    editCompMutation.mutate(params);
+  };
 
   const handleInviteSearch = async () => {
     if (!inviteSearch.trim() && !inviteState) {
@@ -328,7 +422,7 @@ export function ClosedCompDetail() {
     setInviteError('');
   };
 
-  const isGolferAlreadyParticipant = (golferId: string) => {
+  const _isGolferAlreadyParticipant = (golferId: string) => {
     return participants.some(p => p.golferId === golferId);
   };
 
@@ -478,6 +572,12 @@ export function ClosedCompDetail() {
                     <p className="text-gray-900">{comp.holesPerRound}</p>
                   </div>
                   <div>
+                    <label className="text-sm font-medium text-gray-500">Round Selection Mode</label>
+                    <p className="text-gray-900">
+                      {comp.roundSelectionMode === 'first' ? 'First submitted (no replacements)' : 'Best rounds (can replace worse)'}
+                    </p>
+                  </div>
+                  <div>
                     <label className="text-sm font-medium text-gray-500">Participants</label>
                     <p className="text-gray-900">{comp.participantCount}</p>
                   </div>
@@ -507,6 +607,12 @@ export function ClosedCompDetail() {
               </div>
 
               <div className="border-t pt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={handleOpenEditModal}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Edit Competition
+                </button>
                 {comp.status === 'active' && (
                   <button
                     onClick={() => setShowCloseDialog(true)}
@@ -916,6 +1022,162 @@ export function ClosedCompDetail() {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Competition Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Edit Competition</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
+              {editError && (
+                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 text-sm">
+                  {editError}
+                </div>
+              )}
+
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Competition Name *</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Prize */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Prize</label>
+                <input
+                  type="text"
+                  value={editForm.prize}
+                  onChange={(e) => setEditForm({ ...editForm, prize: e.target.value })}
+                  placeholder="e.g., Bottle of wine for the winner!"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Max Rounds and Holes per Round */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Rounds *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={editForm.maxRounds}
+                    onChange={(e) => setEditForm({ ...editForm, maxRounds: parseInt(e.target.value) || 1 })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Holes per Round *</label>
+                  <select
+                    value={editForm.holesPerRound}
+                    onChange={(e) => setEditForm({ ...editForm, holesPerRound: parseInt(e.target.value) })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={9}>9 holes</option>
+                    <option value={18}>18 holes</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Round Selection Mode */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Round Selection Mode</label>
+                <select
+                  value={editForm.roundSelectionMode}
+                  onChange={(e) => setEditForm({ ...editForm, roundSelectionMode: e.target.value as 'best' | 'first' })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="best">Best rounds - new rounds can replace worse ones</option>
+                  <option value="first">First submitted - lock in rounds, no replacements</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {editForm.roundSelectionMode === 'best'
+                    ? "Each player's best rounds are kept. If they submit a better round, it replaces their worst."
+                    : "Once a player reaches max rounds, no more can be added. First submitted rounds are final."}
+                </p>
+              </div>
+
+              {/* Start and End Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                  <input
+                    type="date"
+                    value={editForm.startDate}
+                    onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                  <input
+                    type="date"
+                    value={editForm.endDate}
+                    onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Timezone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                <select
+                  value={editForm.timezone}
+                  onChange={(e) => setEditForm({ ...editForm, timezone: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+                  <option value="Australia/Melbourne">Australia/Melbourne (AEST/AEDT)</option>
+                  <option value="Australia/Brisbane">Australia/Brisbane (AEST)</option>
+                  <option value="Australia/Perth">Australia/Perth (AWST)</option>
+                  <option value="Australia/Adelaide">Australia/Adelaide (ACST/ACDT)</option>
+                  <option value="Australia/Darwin">Australia/Darwin (ACST)</option>
+                  <option value="Australia/Hobart">Australia/Hobart (AEST/AEDT)</option>
+                  <option value="Pacific/Auckland">New Zealand (NZST/NZDT)</option>
+                </select>
+              </div>
+
+              <div className="border-t pt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={editCompMutation.isPending}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
+                >
+                  {editCompMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
