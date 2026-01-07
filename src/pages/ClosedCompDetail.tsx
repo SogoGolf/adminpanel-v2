@@ -624,12 +624,12 @@ export function ClosedCompDetail() {
           {activeTab === 'participants' && (
             <div className="space-y-4">
               {/* Action Buttons */}
-              <div className="flex justify-start gap-3">
+              <div className="flex flex-wrap justify-start gap-2 sm:gap-3">
                 <button
                   onClick={() => setShowInviteModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  className="bg-blue-600 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
                   Invite Golfer
@@ -637,140 +637,227 @@ export function ClosedCompDetail() {
                 {participants.filter(p => !p.isOwner && p.status !== 'blocked').length > 0 && (
                   <button
                     onClick={() => setShowBlockAllDialog(true)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
+                    className="bg-red-500 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-red-600 transition-colors text-sm sm:text-base"
                   >
-                    Block All Users
+                    Block All
                   </button>
                 )}
                 {participants.filter(p => !p.isOwner && p.status === 'blocked').length > 0 && (
                   <button
                     onClick={() => setShowUnblockAllDialog(true)}
-                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
+                    className="bg-green-500 text-white px-3 py-2 sm:px-4 rounded-md hover:bg-green-600 transition-colors text-sm sm:text-base"
                   >
-                    Unblock All Users
+                    Unblock All
                   </button>
                 )}
               </div>
-              <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {participants.map((p) => (
-                    <tr key={p.id}>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {p.golferFirstName} {p.golferLastName}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{p.golferEmail}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(p.status)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">{p.isOwner ? 'Yes' : 'No'}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm">{p.roundsSubmitted}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(p.acceptedDate)}
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {!p.isOwner && (
-                          <button
-                            onClick={() => {
-                              setSelectedParticipant(p);
-                              setShowBlockDialog(true);
-                            }}
-                            className={`px-3 py-1 rounded text-sm ${
-                              p.status === 'blocked'
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-red-100 text-red-700 hover:bg-red-200'
-                            }`}
-                          >
-                            {p.status === 'blocked' ? 'Unblock' : 'Block'}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {participants.length === 0 && (
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {participants.map((p) => (
+                  <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {p.golferFirstName} {p.golferLastName}
+                          {p.isOwner && <span className="ml-2 text-xs text-blue-600">(Owner)</span>}
+                        </p>
+                        <p className="text-sm text-gray-500">{p.golferEmail}</p>
+                      </div>
+                      {getStatusBadge(p.status)}
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-gray-500">
+                      <span>{p.roundsSubmitted} round{p.roundsSubmitted !== 1 ? 's' : ''}</span>
+                      <span>Joined {formatDate(p.acceptedDate)}</span>
+                    </div>
+                    {!p.isOwner && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <button
+                          onClick={() => {
+                            setSelectedParticipant(p);
+                            setShowBlockDialog(true);
+                          }}
+                          className={`w-full px-3 py-2 rounded text-sm ${
+                            p.status === 'blocked'
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                          }`}
+                        >
+                          {p.status === 'blocked' ? 'Unblock' : 'Block'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {participants.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">No participants</div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
-                        No participants
-                      </td>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {participants.map((p) => (
+                      <tr key={p.id}>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {p.golferFirstName} {p.golferLastName}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{p.golferEmail}</td>
+                        <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(p.status)}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">{p.isOwner ? 'Yes' : 'No'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm">{p.roundsSubmitted}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(p.acceptedDate)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {!p.isOwner && (
+                            <button
+                              onClick={() => {
+                                setSelectedParticipant(p);
+                                setShowBlockDialog(true);
+                              }}
+                              className={`px-3 py-1 rounded text-sm ${
+                                p.status === 'blocked'
+                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              }`}
+                            >
+                              {p.status === 'blocked' ? 'Unblock' : 'Block'}
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {participants.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                          No participants
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
           {/* Rounds Tab */}
           {activeTab === 'rounds' && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Golfer</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Round Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Playing Partner</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {rounds.map((r) => (
-                    <React.Fragment key={r.id}>
-                      <tr className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <button
-                            onClick={() => toggleRoundExpansion(r.roundId)}
-                            className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
-                          >
-                            {expandedRounds.has(r.roundId) ? 'Hide' : 'Details'}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {r.golferFirstName} {r.golferLastName}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap font-bold">{r.score}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.compType}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.clubName}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(r.roundDate)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDateTime(r.submittedDate)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          <PlayingPartnerCell roundId={r.roundId} />
-                        </td>
-                      </tr>
-                      {expandedRounds.has(r.roundId) && (
-                        <tr className="bg-gray-50">
-                          <td colSpan={8} className="px-4 py-4">
-                            <ExpandedRoundDetails roundId={r.roundId} />
+            <div>
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {rounds.map((r) => (
+                  <div key={r.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {r.golferFirstName} {r.golferLastName}
+                          </p>
+                          <p className="text-sm text-gray-500">{r.clubName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-gray-900">{r.score}</p>
+                          <p className="text-xs text-gray-500">{r.compType}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+                        <span>Played: {formatDate(r.roundDate)}</span>
+                        <span>Partner: <PlayingPartnerCell roundId={r.roundId} /></span>
+                      </div>
+                      <button
+                        onClick={() => toggleRoundExpansion(r.roundId)}
+                        className="w-full text-blue-600 hover:text-blue-800 text-sm font-medium py-2 border-t border-gray-100 mt-2"
+                      >
+                        {expandedRounds.has(r.roundId) ? 'Hide Scorecard' : 'View Scorecard'}
+                      </button>
+                    </div>
+                    {expandedRounds.has(r.roundId) && (
+                      <div className="bg-gray-50 p-4 border-t border-gray-200 overflow-x-auto">
+                        <ExpandedRoundDetails roundId={r.roundId} />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {rounds.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">No rounds submitted</div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Golfer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Round Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Playing Partner</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rounds.map((r) => (
+                      <React.Fragment key={r.id}>
+                        <tr className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <button
+                              onClick={() => toggleRoundExpansion(r.roundId)}
+                              className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
+                            >
+                              {expandedRounds.has(r.roundId) ? 'Hide' : 'Details'}
+                            </button>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {r.golferFirstName} {r.golferLastName}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap font-bold">{r.score}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.compType}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.clubName}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(r.roundDate)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDateTime(r.submittedDate)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <PlayingPartnerCell roundId={r.roundId} />
                           </td>
                         </tr>
-                      )}
-                    </React.Fragment>
-                  ))}
-                  {rounds.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
-                        No rounds submitted
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        {expandedRounds.has(r.roundId) && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={8} className="px-4 py-4">
+                              <ExpandedRoundDetails roundId={r.roundId} />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    ))}
+                    {rounds.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                          No rounds submitted
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -784,7 +871,38 @@ export function ClosedCompDetail() {
                   </p>
                 </div>
               )}
-              <div className="overflow-x-auto">
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-3">
+                {leaderboard?.leaderboard.map((entry) => (
+                  <div
+                    key={entry.golferId}
+                    className={`bg-white border rounded-lg p-4 shadow-sm ${
+                      entry.rank <= 3 ? 'border-yellow-300 bg-yellow-50/50' : 'border-gray-200'
+                    }`}
+                  >
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        {getRankDisplay(entry.rank)}
+                        <div>
+                          <p className="font-medium text-gray-900">{entry.golferName}</p>
+                          <p className="text-xs text-gray-500">{entry.golferEmail}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">{entry.totalScore}</p>
+                        <p className="text-xs text-gray-500">{entry.roundsCount} round{entry.roundsCount !== 1 ? 's' : ''}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {(!leaderboard?.leaderboard || leaderboard.leaderboard.length === 0) && (
+                  <div className="text-center py-8 text-gray-500">No entries yet</div>
+                )}
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -1055,7 +1173,7 @@ export function ClosedCompDetail() {
               </div>
 
               {/* Max Rounds and Holes per Round */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Max Rounds *</label>
                   <input
@@ -1100,7 +1218,7 @@ export function ClosedCompDetail() {
               </div>
 
               {/* Start and End Dates */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
                   <input
