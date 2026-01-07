@@ -42,6 +42,21 @@ export function Notifications() {
 
   const clubIds = adminUser?.clubIds;
   const requestingUserEmail = user?.email || '';
+  const isSuperAdmin = adminUser?.role === 'super_admin';
+
+  // Check if golflinkNo belongs to one of the admin's clubs
+  const isGolferInAdminClubs = (golflinkNo: string): boolean => {
+    if (isSuperAdmin) return true;
+    if (!clubIds || clubIds.length === 0) return false;
+
+    // Club ID is the prefix of golflinkNo (padded to 5 digits)
+    const clubPrefixes = clubIds.map(id => id.padStart(5, '0'));
+    return clubPrefixes.some(prefix => golflinkNo.startsWith(prefix));
+  };
+
+  const golferClubError = form.audienceType === 'single' && form.golflinkNo && !isSuperAdmin && !isGolferInAdminClubs(form.golflinkNo)
+    ? 'This golfer is not from your club. You can only send notifications to golfers from your assigned clubs.'
+    : null;
 
   const audienceCountMutation = useMutation({
     mutationFn: () => getNotificationAudienceCount({
@@ -111,7 +126,7 @@ export function Notifications() {
       case 'state':
         return !!form.state;
       case 'single':
-        return !!form.golflinkNo;
+        return !!form.golflinkNo && !golferClubError;
       default:
         return false;
     }
@@ -123,7 +138,7 @@ export function Notifications() {
     <div className="space-y-6 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Send Notification</h1>
-        <p className="text-sm text-gray-600 mt-1">Send push notifications to golfers via OneSignal</p>
+        <p className="text-sm text-gray-600 mt-1">Send push notifications to golfers</p>
       </div>
 
       {/* Audience Selection */}
@@ -171,55 +186,65 @@ export function Notifications() {
             </div>
           )}
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="audienceType"
-              value="club"
-              checked={form.audienceType === 'club'}
-              onChange={() => handleAudienceTypeChange('club')}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-gray-900">By Club (all members)</span>
-          </label>
-          {form.audienceType === 'club' && (
-            <div className="ml-7">
-              <input
-                type="text"
-                value={form.clubId}
-                onChange={(e) => setForm({ ...form, clubId: e.target.value })}
-                placeholder="Enter club ID (e.g., 50135)"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-              />
-            </div>
+          {/* By Club - Super Admin only */}
+          {isSuperAdmin && (
+            <>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="audienceType"
+                  value="club"
+                  checked={form.audienceType === 'club'}
+                  onChange={() => handleAudienceTypeChange('club')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-gray-900">By Club (all members)</span>
+              </label>
+              {form.audienceType === 'club' && (
+                <div className="ml-7">
+                  <input
+                    type="text"
+                    value={form.clubId}
+                    onChange={(e) => setForm({ ...form, clubId: e.target.value })}
+                    placeholder="Enter club ID (e.g., 50135)"
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                  />
+                </div>
+              )}
+            </>
           )}
 
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="radio"
-              name="audienceType"
-              value="state"
-              checked={form.audienceType === 'state'}
-              onChange={() => handleAudienceTypeChange('state')}
-              className="w-4 h-4 text-blue-600"
-            />
-            <span className="text-gray-900">By State</span>
-          </label>
-          {form.audienceType === 'state' && (
-            <div className="ml-7">
-              <select
-                value={form.state}
-                onChange={(e) => setForm({ ...form, state: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select state...</option>
-                {stateOptions.map((state) => (
-                  <option key={state} value={state}>
-                    {state}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* By State - Super Admin only */}
+          {isSuperAdmin && (
+            <>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="audienceType"
+                  value="state"
+                  checked={form.audienceType === 'state'}
+                  onChange={() => handleAudienceTypeChange('state')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <span className="text-gray-900">By State</span>
+              </label>
+              {form.audienceType === 'state' && (
+                <div className="ml-7">
+                  <select
+                    value={form.state}
+                    onChange={(e) => setForm({ ...form, state: e.target.value })}
+                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select state...</option>
+                    {stateOptions.map((state) => (
+                      <option key={state} value={state}>
+                        {state}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </>
           )}
 
           <label className="flex items-center gap-3 cursor-pointer">
@@ -240,8 +265,11 @@ export function Notifications() {
                 value={form.golflinkNo}
                 onChange={(e) => setForm({ ...form, golflinkNo: e.target.value })}
                 placeholder="Enter GA number"
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 ${golferClubError ? 'border-red-500' : 'border-gray-300'}`}
               />
+              {golferClubError && (
+                <p className="mt-1 text-sm text-red-600">{golferClubError}</p>
+              )}
             </div>
           )}
         </div>
