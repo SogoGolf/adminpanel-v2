@@ -142,3 +142,87 @@ export interface RoundDetail {
     holeScores?: HoleScore[];
   };
 }
+
+// Closed Comps types
+export interface ClosedComp {
+  id: string;
+  entityId?: string;
+  ownerId: string;
+  ownerFirstName: string;
+  ownerLastName: string;
+  ownerEmail: string;
+  name: string;
+  inviteCode: string;
+  compTypes: string[];
+  maxRounds: number;
+  holesPerRound: number;
+  prize?: string;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  status: 'active' | 'closed';
+  participantCount: number;
+  createdDate: string;
+  updateDate?: string;
+}
+
+export interface ClosedCompParticipant {
+  id: string;
+  compId: string;
+  compName: string;
+  golferId: string;
+  golferFirstName: string;
+  golferLastName: string;
+  golferEmail: string;
+  golferImageUrl?: string;
+  isOwner: boolean;
+  status: 'invited' | 'accepted' | 'blocked';
+  roundsSubmitted: number;
+  invitedDate: string;
+  acceptedDate?: string;
+  blockedDate?: string;
+  createdDate: string;
+  updateDate?: string;
+}
+
+export interface ClosedCompRound {
+  id: string;
+  compId: string;
+  compName: string;
+  roundId: string;
+  golferId: string;
+  golferFirstName: string;
+  golferLastName: string;
+  golferEmail: string;
+  golferImageUrl?: string;
+  score: number;
+  compType: string;
+  clubName: string;
+  roundDate: string;
+  submittedDate: string;
+  createdDate: string;
+  updateDate?: string;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  golferId: string;
+  golferName: string;
+  golferEmail: string;
+  golferImageUrl?: string;
+  totalScore: number;
+  roundsCount: number;
+  rounds: {
+    score: number;
+    roundDate: string;
+    clubName: string;
+  }[];
+}
+
+export interface ClosedCompLeaderboard {
+  compId: string;
+  compName: string;
+  compType: string;
+  maxRounds: number;
+  leaderboard: LeaderboardEntry[];
+}

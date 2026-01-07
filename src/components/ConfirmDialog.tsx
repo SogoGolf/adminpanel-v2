@@ -4,9 +4,16 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  variant?: 'danger' | 'warning' | 'success';
   onConfirm: () => void;
   onCancel: () => void;
 }
+
+const variantClasses = {
+  danger: 'bg-red-600 hover:bg-red-700',
+  warning: 'bg-yellow-500 hover:bg-yellow-600',
+  success: 'bg-green-600 hover:bg-green-700',
+};
 
 export function ConfirmDialog({
   open,
@@ -14,6 +21,7 @@ export function ConfirmDialog({
   message,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
+  variant = 'danger',
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -33,7 +41,7 @@ export function ConfirmDialog({
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            className={`px-4 py-2 text-white rounded transition-colors ${variantClasses[variant]}`}
           >
             {confirmLabel}
           </button>

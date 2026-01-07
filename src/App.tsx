@@ -10,6 +10,8 @@ import { GolferDetail } from './pages/GolferDetail';
 import { Rounds } from './pages/Rounds';
 import { Notifications } from './pages/Notifications';
 import { AdminUsers } from './pages/AdminUsers';
+import { ClosedComps } from './pages/ClosedComps';
+import { ClosedCompDetail } from './pages/ClosedCompDetail';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
@@ -19,6 +21,7 @@ const allMenuItems = [
   { path: '/', label: 'Golfer Lookup', feature: 'golfer-lookup' },
   { path: '/golfers', label: 'Golfers', feature: 'golfers' },
   { path: '/rounds', label: 'Rounds', feature: 'rounds' },
+  { path: '/closed-comps', label: 'Closed Comps', feature: 'closed-comps' },
   { path: '/notifications', label: 'Notifications', feature: 'notifications' },
   { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
 ];
@@ -216,6 +219,26 @@ function AppRoutes() {
           <ProtectedRoute requiredFeature="admin-users">
             <Layout>
               <AdminUsers />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/closed-comps"
+        element={
+          <ProtectedRoute requiredFeature="closed-comps">
+            <Layout>
+              <ClosedComps />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/closed-comps/:id"
+        element={
+          <ProtectedRoute requiredFeature="closed-comps">
+            <Layout>
+              <ClosedCompDetail />
             </Layout>
           </ProtectedRoute>
         }

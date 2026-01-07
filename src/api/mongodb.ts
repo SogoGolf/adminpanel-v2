@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse } from '../types';
+import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard } from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository } from './interfaces';
 
 const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
@@ -233,5 +233,112 @@ export async function sendNotification(params: SendNotificationParams): Promise<
       },
     }
   );
+  return response.data;
+}
+
+// Closed Comps API functions
+export interface GetClosedCompsParams {
+  page?: number;
+  pageSize?: number;
+  status?: 'active' | 'closed';
+  search?: string;
+  ownerId?: string;
+}
+
+export async function getClosedComps(params: GetClosedCompsParams = {}): Promise<PaginatedResponse<ClosedComp>> {
+  const { page = 1, pageSize = 20, status, search, ownerId } = params;
+  const response = await api.get<PaginatedResponse<ClosedComp>>('/closedcomps', {
+    params: {
+      page,
+      pageSize,
+      status: status || undefined,
+      search: search || undefined,
+      ownerId: ownerId || undefined,
+    },
+  });
+  return response.data;
+}
+
+export async function getClosedCompById(id: string): Promise<ClosedComp> {
+  const response = await api.get<ClosedComp>(`/closedcomps/${id}`);
+  return response.data;
+}
+
+export async function getClosedCompParticipants(compId: string, status?: string): Promise<ClosedCompParticipant[]> {
+  const response = await api.get<ClosedCompParticipant[]>(`/closedcomps/${compId}/participants`, {
+    params: { status: status || undefined },
+  });
+  return response.data;
+}
+
+export async function getClosedCompRounds(compId: string): Promise<ClosedCompRound[]> {
+  const response = await api.get<ClosedCompRound[]>(`/closedcomps/${compId}/rounds`);
+  return response.data;
+}
+
+export async function getClosedCompLeaderboard(compId: string): Promise<ClosedCompLeaderboard> {
+  const response = await api.get<ClosedCompLeaderboard>(`/closedcomps/${compId}/leaderboard`);
+  return response.data;
+}
+
+export async function updateClosedCompStatus(id: string, status: 'active' | 'closed'): Promise<void> {
+  await api.patch(`/closedcomps/${id}/status`, { status });
+}
+
+export async function deleteClosedComp(id: string): Promise<void> {
+  await api.delete(`/closedcomps/${id}`);
+}
+
+export async function updateParticipantStatus(
+  compId: string,
+  participantId: string,
+  status: 'accepted' | 'blocked'
+): Promise<void> {
+  await api.patch(`/closedcomps/${compId}/participants/${participantId}/status`, { status });
+}
+
+export interface CreateClosedCompParams {
+  name: string;
+  ownerEmail: string;
+  ownerName: string;
+  ownerId?: string;
+  compTypes: string[];
+  maxRounds: number;
+  holesPerRound: number;
+  prize?: string;
+  startDate: string; // ISO date string
+  endDate: string; // ISO date string
+  timezone?: string;
+  entityId?: string;
+}
+
+export async function createClosedComp(params: CreateClosedCompParams): Promise<ClosedComp> {
+  const response = await api.post<ClosedComp>('/closedcomps', params);
+  return response.data;
+}
+
+// Search golfers for owner selection or invite
+export async function searchGolfers(params: {
+  search?: string;
+  state?: string;
+  clubName?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResponse<Golfer>> {
+  const response = await api.get<PaginatedResponse<Golfer>>('/golfers/all', {
+    params: {
+      page: params.page || 1,
+      pageSize: params.pageSize || 10,
+      search: params.search || undefined,
+      state: params.state || undefined,
+      clubName: params.clubName || undefined,
+    },
+  });
+  return response.data;
+}
+
+// Invite a golfer to a closed comp
+export async function inviteParticipant(compId: string, golferId: string): Promise<ClosedCompParticipant> {
+  const response = await api.post<ClosedCompParticipant>(`/closedcomps/${compId}/participants`, { golferId });
   return response.data;
 }
