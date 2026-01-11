@@ -21,7 +21,9 @@ export function Login() {
       await signIn(email, password);
       navigate('/');
     } catch (err) {
-      setError('Invalid email or password');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Login error:', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

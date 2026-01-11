@@ -5,6 +5,7 @@ import { golferService, transactionService } from '../services';
 import { TransactionTable } from '../components/TransactionTable';
 import { AddTokensDialog } from '../components/AddTokensDialog';
 import { useFeature } from '../contexts/TenantContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function GolferLookup() {
   const queryClient = useQueryClient();
@@ -12,6 +13,7 @@ export function GolferLookup() {
   const [golflinkNo, setGolflinkNo] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const { adminUser } = useAuth();
   const canAddTokens = useFeature('canAddTokens');
   const canViewRounds = useFeature('canViewRounds');
 
@@ -68,7 +70,14 @@ export function GolferLookup() {
         throw new Error('Transaction type not found');
       }
 
-      return transactionService.addTransaction(golfer, transactionType, amount, currentBalance);
+      // Pass admin user for audit logging
+      const performedBy = adminUser ? {
+        id: adminUser.id,
+        email: adminUser.email,
+        name: adminUser.name,
+      } : undefined;
+
+      return transactionService.addTransaction(golfer, transactionType, amount, currentBalance, performedBy);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions', golfer?.id] });

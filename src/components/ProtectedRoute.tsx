@@ -13,10 +13,11 @@ const featureRoutes: Record<string, string> = {
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredFeature?: string;
+  requireSuperAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, requiredFeature }: ProtectedRouteProps) {
-  const { user, adminUser, loading, permissionsLoading, permissionsError, hasFeature, signOut } = useAuth();
+export function ProtectedRoute({ children, requiredFeature, requireSuperAdmin }: ProtectedRouteProps) {
+  const { user, adminUser, loading, permissionsLoading, permissionsError, hasFeature, isSuperAdmin, signOut } = useAuth();
 
   // Get the first route the user has access to
   const getFirstAccessibleRoute = (): string => {
@@ -71,6 +72,12 @@ export function ProtectedRoute({ children, requiredFeature }: ProtectedRouteProp
         </div>
       </div>
     );
+  }
+
+  // Check super admin access if required
+  if (requireSuperAdmin && !isSuperAdmin()) {
+    const firstAccessibleRoute = getFirstAccessibleRoute();
+    return <Navigate to={firstAccessibleRoute} replace />;
   }
 
   // Check feature access if required

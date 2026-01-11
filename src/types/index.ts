@@ -227,3 +227,30 @@ export interface ClosedCompLeaderboard {
   maxRounds: number;
   leaderboard: LeaderboardEntry[];
 }
+
+// Audit Log types
+export type AuditAction =
+  | 'ADMIN_CREDIT'
+  | 'ADMIN_DEBIT'
+  | 'NOTIFICATION_SENT'
+  | 'ADMIN_USER_CREATED'
+  | 'ADMIN_USER_UPDATED';
+
+export interface AuditLog {
+  id: string;
+  type: 'auditLog';
+  action: AuditAction;
+  performedBy: {
+    id: string;
+    email: string;
+    name: string;
+  };
+  target?: {
+    type: 'golfer' | 'admin' | 'notification';
+    id: string;
+    name: string;
+    email?: string;
+  };
+  details: Record<string, unknown>;
+  timestamp: string;
+}

@@ -1,6 +1,6 @@
 import axios from 'axios';
-import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard } from '../types';
-import type { IApiClient, IGolferRepository, ITransactionRepository } from './interfaces';
+import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard, AuditLog } from '../types';
+import type { IApiClient, IGolferRepository, ITransactionRepository, IAuditLogRepository, GetAuditLogsParams } from './interfaces';
 
 const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
 
@@ -81,9 +81,21 @@ const transactionRepository: ITransactionRepository = {
   },
 };
 
+// Audit logs - uses CosmosDB directly, not MongoDB API
+// This is a stub to satisfy the interface
+const auditLogRepository: IAuditLogRepository = {
+  async add(_log: AuditLog): Promise<AuditLog> {
+    throw new Error('Audit logs are stored in CosmosDB, not MongoDB');
+  },
+  async getAll(_params?: GetAuditLogsParams): Promise<PaginatedResponse<AuditLog>> {
+    throw new Error('Audit logs are stored in CosmosDB, not MongoDB');
+  },
+};
+
 export const mongoDbClient: IApiClient = {
   golfers: golferRepository,
   transactions: transactionRepository,
+  auditLogs: auditLogRepository,
 };
 
 // Direct API functions for MongoDB-specific endpoints

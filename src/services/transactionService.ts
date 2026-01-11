@@ -1,6 +1,13 @@
 import { v4 as uuidv4 } from 'uuid';
 import { api } from '../api';
 import type { Golfer, Transaction, TransactionType } from '../types';
+import { auditService } from './auditService';
+
+interface PerformedBy {
+  id: string;
+  email: string;
+  name: string;
+}
 
 export const transactionService = {
   async getForGolfer(golferId: string): Promise<Transaction[]> {
@@ -29,12 +36,14 @@ export const transactionService = {
 
   /**
    * Create and add a new transaction for a golfer.
+   * If performedBy is provided and this is an admin credit/debit, an audit log is created.
    */
   async addTransaction(
     golfer: Golfer,
     transactionType: TransactionType,
     amount: number,
-    currentBalance: number
+    currentBalance: number,
+    performedBy?: PerformedBy
   ): Promise<Transaction> {
     const newBalance = transactionType.debitOrCredit === 'credit'
       ? currentBalance + amount
@@ -60,6 +69,17 @@ export const transactionService = {
       createdDate: new Date().toISOString(),
     };
 
-    return api.transactions.add(transaction);
+    const result = await api.transactions.add(transaction);
+
+    // Log audit for admin credit/debit actions
+    if (performedBy && (transactionType.name === 'Admin Credit' || transactionType.name === 'Admin Debit')) {
+      if (transactionType.name === 'Admin Credit') {
+        await auditService.logAdminCredit(performedBy, golfer, amount, result.id, newBalance);
+      } else {
+        await auditService.logAdminDebit(performedBy, golfer, amount, result.id, newBalance);
+      }
+    }
+
+    return result;
   },
 };

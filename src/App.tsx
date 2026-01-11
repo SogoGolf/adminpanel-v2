@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -12,6 +14,7 @@ import { Notifications } from './pages/Notifications';
 import { AdminUsers } from './pages/AdminUsers';
 import { ClosedComps } from './pages/ClosedComps';
 import { ClosedCompDetail } from './pages/ClosedCompDetail';
+import { AuditLog } from './pages/AuditLog';
 import { Login } from './pages/Login';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
@@ -24,25 +27,38 @@ const allMenuItems = [
   { path: '/closed-comps', label: 'Closed Comps', feature: 'closed-comps' },
   { path: '/notifications', label: 'Notifications', feature: 'notifications' },
   { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
+  { path: '/audit-log', label: 'Audit Log', superAdminOnly: true },
 ];
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 60 * 24, // 24 hours - keep in cache for persistence
       retry: 1,
     },
   },
 });
 
+// Persist cache to localStorage
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'sogo-admin-cache',
+});
+
 function Layout({ children }: { children: React.ReactNode }) {
-  const { user, adminUser, signOut, hasFeature } = useAuth();
+  const { user, adminUser, signOut, hasFeature, isSuperAdmin } = useAuth();
   const tenant = useTenant();
   const [showSignOutDialog, setShowSignOutDialog] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Filter menu items based on user's features
-  const menuItems = allMenuItems.filter(item => hasFeature(item.feature));
+  // Filter menu items based on user's features and role
+  const menuItems = allMenuItems.filter(item => {
+    if (item.superAdminOnly) {
+      return isSuperAdmin();
+    }
+    return item.feature && hasFeature(item.feature);
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
@@ -243,6 +259,16 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/audit-log"
+        element={
+          <ProtectedRoute requireSuperAdmin>
+            <Layout>
+              <AuditLog />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
       {/* Redirect unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -252,13 +278,16 @@ function AppRoutes() {
 function App() {
   return (
     <TenantProvider>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+      >
         <AuthProvider>
           <BrowserRouter>
             <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </TenantProvider>
   );
 }

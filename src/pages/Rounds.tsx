@@ -699,8 +699,9 @@ export function Rounds() {
       </div>
 
       {isLoading && !data && (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="fixed inset-0 flex flex-col justify-center items-center bg-gray-100/80 z-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading rounds...</p>
         </div>
       )}
 
@@ -718,10 +719,14 @@ export function Rounds() {
             <span>
               Showing {data.data.length} of {data.totalCount.toLocaleString()} rounds
               {hasActiveFilters && <span className="ml-1 text-blue-600">(filtered)</span>}
+              {isFetching && (
+                <span className="ml-1 text-orange-500 inline-flex items-center gap-1">
+                  (fetching latest...
+                  <span className="animate-spin inline-block h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></span>
+                  )
+                </span>
+              )}
             </span>
-            {isFetching && (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-            )}
           </div>
 
           {/* Mobile filters */}
