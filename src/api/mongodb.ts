@@ -150,6 +150,12 @@ export interface GetAllRoundsParams {
   clubIds?: string[]; // For multi-tenant filtering
 }
 
+// Lightweight response for polling counts only
+export interface RoundsCountResponse {
+  todayInProgressCount: number;
+  todaySubmittedCount: number;
+}
+
 export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<RoundsPaginatedResponse> {
   const { page = 1, pageSize = 20, golferName, golflinkNo, clubName, state, compType, roundType, isSubmitted, roundDate, clubIds } = params;
   const response = await api.get<RoundsPaginatedResponse>('/rounds/search', {
@@ -168,6 +174,24 @@ export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<Rou
     },
   });
   return response.data;
+}
+
+/**
+ * Lightweight polling for just the counts - uses pageSize=1 to minimize data transfer.
+ * TODO: Replace with dedicated /rounds/counts endpoint when available.
+ */
+export async function getRoundsCounts(clubIds?: string[]): Promise<RoundsCountResponse> {
+  const response = await api.get<RoundsPaginatedResponse>('/rounds/search', {
+    params: {
+      page: 1,
+      pageSize: 1, // Minimize data transfer - we only need the counts
+      clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
+    },
+  });
+  return {
+    todayInProgressCount: response.data.todayInProgressCount,
+    todaySubmittedCount: response.data.todaySubmittedCount,
+  };
 }
 
 export async function getRoundById(id: string): Promise<RoundDetail> {

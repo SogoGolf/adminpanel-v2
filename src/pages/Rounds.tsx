@@ -1,13 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   createColumnHelper,
 } from '@tanstack/react-table';
-import { getAllRounds, getRoundById } from '../api/mongodb';
+import { getAllRounds, getRoundById, getRoundsCounts } from '../api/mongodb';
 import { useAuth } from '../contexts/AuthContext';
 import type { RoundSummary, HoleScore } from '../types';
 
@@ -207,12 +207,6 @@ function isToday(dateString?: string | null): boolean {
   );
 }
 
-// Check if hole scores are incomplete (any hole missing strokes)
-function isIncomplete(holeScores?: HoleScore[]): boolean {
-  if (!holeScores || holeScores.length === 0) return true;
-  return holeScores.some(hole => hole.strokes === null || hole.strokes === undefined || hole.strokes === 0);
-}
-
 // Expandable row content that fetches round details
 function ExpandedRoundDetails({ roundId }: { roundId: string }) {
   const { data: round, isLoading, isError } = useQuery({
@@ -236,34 +230,26 @@ function ExpandedRoundDetails({ roundId }: { roundId: string }) {
     return <div className="text-gray-500 py-4">No hole scores available</div>;
   }
 
-  const golferInProgress = isToday(round.roundDate) && isIncomplete(round.holeScores);
-  const partnerInProgress = isToday(round.roundDate) && isIncomplete(round.playingPartnerRound?.holeScores);
-
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Golfer's scorecard */}
       <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-          <span>{round.golferFirstName || ''} {round.golferLastName || 'Golfer'}</span>
-          {golferInProgress && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-              In Progress
-            </span>
-          )}
-        </h4>
+        <div className="flex items-center gap-2 mb-2">
+          <h4 className="text-sm font-semibold text-gray-900">
+            {round.golferFirstName || ''} {round.golferLastName || 'Golfer'}
+          </h4>
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            App: {round.sogoAppVersion || 'Unknown'}
+          </span>
+        </div>
         <ScorecardTable holeScores={round.holeScores} />
       </div>
 
       {/* Playing partner's scorecard */}
       {round.playingPartnerRound?.holeScores && round.playingPartnerRound.holeScores.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <span>{round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}</span>
-            {partnerInProgress && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                In Progress
-              </span>
-            )}
+          <h4 className="text-sm font-semibold text-gray-900 mb-2">
+            {round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}
           </h4>
           <ScorecardTable holeScores={round.playingPartnerRound.holeScores} />
         </div>
@@ -413,11 +399,14 @@ function getInitialFilters(): ColumnFiltersState {
 
 export function Rounds() {
   const { adminUser } = useAuth();
+  const queryClient = useQueryClient();
   const pageSize = 20;
 
   const [page, setPage] = useState(1);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(getInitialFilters);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [knownCounts, setKnownCounts] = useState<{ inProgress: number; submitted: number } | null>(null);
+  const [newRoundsAvailable, setNewRoundsAvailable] = useState(false);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
@@ -472,6 +461,50 @@ export function Rounds() {
     }),
     placeholderData: keepPreviousData,
   });
+
+  // Poll for counts every 30 seconds to detect new rounds
+  // Only start polling after initial data has loaded
+  const { data: polledCounts } = useQuery({
+    queryKey: ['roundsCounts', clubIds],
+    queryFn: () => getRoundsCounts(clubIds),
+    refetchInterval: 30000, // Poll every 30 seconds
+    refetchIntervalInBackground: false, // Don't poll when tab is hidden
+    enabled: !!knownCounts, // Only poll after we have baseline counts
+    staleTime: 0, // Always consider stale - we want fresh counts
+    gcTime: 0, // Don't cache polling results
+  });
+
+  // Update known counts when main data loads (only once on initial load)
+  useEffect(() => {
+    if (data && !knownCounts) {
+      setKnownCounts({
+        inProgress: data.todayInProgressCount,
+        submitted: data.todaySubmittedCount,
+      });
+    }
+  }, [data, knownCounts]);
+
+  // Detect when polled counts differ from known counts
+  useEffect(() => {
+    if (polledCounts && knownCounts) {
+      const hasNewRounds =
+        polledCounts.todayInProgressCount !== knownCounts.inProgress ||
+        polledCounts.todaySubmittedCount !== knownCounts.submitted;
+      setNewRoundsAvailable(hasNewRounds);
+    }
+  }, [polledCounts, knownCounts]);
+
+  // Refresh data and update known counts
+  const handleRefreshRounds = useCallback(() => {
+    setNewRoundsAvailable(false);
+    if (polledCounts) {
+      setKnownCounts({
+        inProgress: polledCounts.todayInProgressCount,
+        submitted: polledCounts.todaySubmittedCount,
+      });
+    }
+    queryClient.invalidateQueries({ queryKey: ['rounds'] });
+  }, [polledCounts, queryClient]);
 
   useEffect(() => {
     setPage(1);
@@ -697,6 +730,22 @@ export function Rounds() {
           </button>
         )}
       </div>
+
+      {/* New rounds notification */}
+      {newRoundsAvailable && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 text-lg">●</span>
+            <span className="text-blue-800 font-medium">Round updates available</span>
+          </div>
+          <button
+            onClick={handleRefreshRounds}
+            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+      )}
 
       {isLoading && !data && (
         <div className="fixed inset-0 flex flex-col justify-center items-center bg-gray-100/80 z-50">

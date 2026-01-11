@@ -135,6 +135,7 @@ export interface RoundDetail {
   slopeRating?: number;
   compScoreTotal?: number;
   isSubmitted?: boolean;
+  sogoAppVersion?: string;
   holeScores?: HoleScore[];
   playingPartnerRound?: {
     golferFirstName?: string;
