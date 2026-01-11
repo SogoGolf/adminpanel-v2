@@ -119,8 +119,8 @@ function TransactionsTab({ email, tokenBalance }: { email: string; tokenBalance:
 
   if (isError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-700 dark:text-red-400">
           Error loading transactions: {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -129,7 +129,7 @@ function TransactionsTab({ email, tokenBalance }: { email: string; tokenBalance:
 
   if (!allTransactions || allTransactions.length === 0) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-gray-500 dark:text-gray-400 text-center py-8">
         No transactions found for this golfer.
       </div>
     );
@@ -138,14 +138,14 @@ function TransactionsTab({ email, tokenBalance }: { email: string; tokenBalance:
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-600">Current Balance:</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">Current Balance:</span>
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-          tokenBalance > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+          tokenBalance > 0 ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
         }`}>
           {tokenBalance}
         </span>
       </div>
-      <div className="text-sm text-gray-600 flex items-center gap-2">
+      <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
         <span>
           Showing {paginatedData.data.length} of {paginatedData.totalCount} transactions
         </span>
@@ -155,35 +155,35 @@ function TransactionsTab({ email, tokenBalance }: { email: string; tokenBalance:
       </div>
 
       <div className={`overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Comment</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Amount</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {paginatedData.data.map((transaction) => (
-              <tr key={transaction.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+              <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {formatDate(transaction.transactionDate)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 capitalize">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 capitalize">
                   {transaction.transactionType?.replace(/_/g, ' ') || '-'}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
+                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 max-w-xs truncate">
                   {transaction.comment || '-'}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-right">
-                  <span className={transaction.debitCreditType?.toLowerCase() === 'credit' ? 'text-green-600' : 'text-red-600'}>
+                  <span className={transaction.debitCreditType?.toLowerCase() === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                     {transaction.debitCreditType?.toLowerCase() === 'credit' ? '+' : '-'}
                     {formatCurrency(transaction.amount)}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 capitalize">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 capitalize">
                   {transaction.status || '-'}
                 </td>
               </tr>
@@ -195,35 +195,35 @@ function TransactionsTab({ email, tokenBalance }: { email: string; tokenBalance:
       {/* Pagination */}
       {paginatedData.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Page {page} of {paginatedData.totalPages}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setPage(1)}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               First
             </button>
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Previous
             </button>
             <button
               onClick={() => setPage((p) => Math.min(paginatedData.totalPages, p + 1))}
               disabled={page >= paginatedData.totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Next
             </button>
             <button
               onClick={() => setPage(paginatedData.totalPages)}
               disabled={page >= paginatedData.totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Last
             </button>
@@ -249,58 +249,58 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
   };
 
   const SubtotalRow = ({ label, holes }: { label: string; holes: HoleScore[] }) => (
-    <tr className="bg-gray-200 font-semibold">
-      <td className="px-2 py-1 text-xs">{label}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'par')}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'meters')}</td>
-      <td className="px-2 py-1 text-xs text-right">-</td>
-      <td className="px-2 py-1 text-xs text-right">-</td>
-      <td className="px-2 py-1 text-xs text-right">-</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'strokes')}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'score')}</td>
+    <tr className="bg-gray-200 dark:bg-gray-600 font-semibold">
+      <td className="px-2 py-1 text-xs text-gray-900 dark:text-gray-100">{label}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'par')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'meters')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">-</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">-</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">-</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'strokes')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'score')}</td>
     </tr>
   );
 
   return (
-    <table className="text-xs border border-gray-300">
-      <thead className="bg-gray-100">
+    <table className="text-xs border border-gray-300 dark:border-gray-600">
+      <thead className="bg-gray-100 dark:bg-gray-700">
         <tr>
-          <th className="px-2 py-1 text-left font-medium text-gray-600">Hole</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Par</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Meters</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Idx 1</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Idx 2</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Idx 3</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Strokes</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Points</th>
+          <th className="px-2 py-1 text-left font-medium text-gray-600 dark:text-gray-300">Hole</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Par</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Meters</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Idx 1</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Idx 2</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Idx 3</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Strokes</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Points</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200">
+      <tbody className="divide-y divide-gray-200 dark:divide-gray-600 bg-white dark:bg-gray-800">
         {is18Hole ? (
           <>
             {front9.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index1 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index2 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index3 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index1 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index2 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index3 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Front 9" holes={front9} />
             {back9.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index1 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index2 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index3 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index1 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index2 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index3 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Back 9" holes={back9} />
@@ -309,15 +309,15 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
         ) : (
           <>
             {sortedHoles.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index1 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index2 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.index3 ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index1 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index2 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.index3 ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Total" holes={sortedHoles} />
@@ -358,23 +358,23 @@ function RoundCardMobile({
   })();
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 space-y-2">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-2">
       {/* Header row with date and status */}
       <div className="flex items-center justify-between gap-2">
-        <span className="font-medium text-gray-900">{formatDate(round.roundDate)}</span>
+        <span className="font-medium text-gray-900 dark:text-white">{formatDate(round.roundDate)}</span>
         <div className="flex items-center gap-2">
           {round.isSubmitted ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
               Submitted
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
               Not Submitted
             </span>
           )}
           <button
             onClick={onToggle}
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm font-medium"
           >
             {isExpanded ? 'Hide' : 'Details'}
           </button>
@@ -382,7 +382,7 @@ function RoundCardMobile({
       </div>
 
       {/* Club and type */}
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-gray-600 dark:text-gray-400">
         {round.clubName || '-'}
         {round.compType && ` • ${round.compType}`}
         {round.teeColor && ` • ${round.teeColor} tee`}
@@ -390,39 +390,39 @@ function RoundCardMobile({
 
       {/* Stats row */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <span className="text-gray-500">
-          HCP: <span className="text-gray-900">{round.dailyHandicap?.toFixed(1) ?? '-'}</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          HCP: <span className="text-gray-900 dark:text-gray-100">{round.dailyHandicap?.toFixed(1) ?? '-'}</span>
         </span>
-        <span className="text-gray-500">
-          Strokes: <span className="text-gray-900">{calculateTotalStrokes(round.holeScores)}</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          Strokes: <span className="text-gray-900 dark:text-gray-100">{calculateTotalStrokes(round.holeScores)}</span>
         </span>
-        <span className="text-gray-500">
-          Score: <span className="text-green-600 font-medium">{calculateTotalScore(round.holeScores)}</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          Score: <span className="text-green-600 dark:text-green-400 font-medium">{calculateTotalScore(round.holeScores)}</span>
         </span>
       </div>
 
       {/* Course rating row */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <span className="text-gray-500">
-          Scratch: <span className="text-gray-900">{round.scratchRating?.toFixed(1) ?? '-'}</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          Scratch: <span className="text-gray-900 dark:text-gray-100">{round.scratchRating?.toFixed(1) ?? '-'}</span>
         </span>
-        <span className="text-gray-500">
-          Slope: <span className="text-gray-900">{round.slopeRating?.toFixed(1) ?? '-'}</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          Slope: <span className="text-gray-900 dark:text-gray-100">{round.slopeRating?.toFixed(1) ?? '-'}</span>
         </span>
         {markerName && (
-          <span className="text-gray-500">
-            Marker: <span className="text-gray-900">{markerName}</span>
+          <span className="text-gray-500 dark:text-gray-400">
+            Marker: <span className="text-gray-900 dark:text-gray-100">{markerName}</span>
           </span>
         )}
       </div>
 
       {/* Expanded scorecard */}
       {isExpanded && round.holeScores && round.holeScores.length > 0 && (
-        <div className="pt-3 border-t border-gray-200 mt-3">
+        <div className="pt-3 border-t border-gray-200 dark:border-gray-700 mt-3">
           <div className="flex flex-col lg:flex-row gap-4 overflow-x-auto">
             {/* Golfer's scorecard */}
             <div>
-              <h4 className="text-sm font-semibold text-gray-900 mb-2">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 {round.golferFirstName || ''} {round.golferLastName || 'Golfer'}
               </h4>
               <ScorecardTable holeScores={round.holeScores} />
@@ -431,7 +431,7 @@ function RoundCardMobile({
             {/* Playing partner's scorecard */}
             {round.playingPartnerRound?.holeScores && round.playingPartnerRound.holeScores.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                   {round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}
                 </h4>
                 <ScorecardTable holeScores={round.playingPartnerRound.holeScores} />
@@ -498,8 +498,8 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
 
   if (isError) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-700 dark:text-red-400">
           Error loading rounds: {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -508,7 +508,7 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
 
   if (!data || data.data.length === 0) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <div className="text-gray-500 dark:text-gray-400 text-center py-8">
         No rounds found for this golfer.
       </div>
     );
@@ -516,7 +516,7 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="text-sm text-gray-600 flex items-center gap-2">
+      <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
         <span>
           Showing {data.data.length} of {data.pagination.totalCount} rounds
         </span>
@@ -528,7 +528,7 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
       {/* Mobile card view */}
       <div className="lg:hidden space-y-3 relative">
         {isFetching && (
-          <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-10 rounded-lg">
+          <div className="absolute inset-0 bg-white/60 dark:bg-gray-800/60 flex items-center justify-center z-10 rounded-lg">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
           </div>
         )}
@@ -546,65 +546,65 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
 
       {/* Desktop table view */}
       <div className={`hidden lg:block overflow-x-auto transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th className="px-2 py-3 w-8"></th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Club</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tee</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">HCP</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Scratch</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Slope</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Strokes</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Marker</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Club</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tee</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">HCP</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scratch</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Slope</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Strokes</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Score</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Marker</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {data.data.map((round) => (
               <React.Fragment key={round.id}>
-              <tr className="hover:bg-gray-50">
+              <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="px-2 py-3 whitespace-nowrap">
                   <button
                     onClick={() => toggleRow(round.id)}
-                    className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:underline text-xs font-medium"
                   >
                     {expandedRows.has(round.id) ? 'Hide' : 'Details'}
                   </button>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {formatDate(round.roundDate)}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {round.clubName || '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 capitalize">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 capitalize">
                   {round.compType || '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 capitalize">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100 capitalize">
                   {round.teeColor || '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
                   {round.dailyHandicap?.toFixed(1) ?? '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
                   {round.scratchRating?.toFixed(1) ?? '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
                   {round.slopeRating?.toFixed(1) ?? '-'}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
                   {calculateTotalStrokes(round.holeScores)}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium">
-                  <span className={typeof calculateTotalScore(round.holeScores) === 'number' ? 'text-green-600' : 'text-gray-900'}>
+                  <span className={typeof calculateTotalScore(round.holeScores) === 'number' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'}>
                     {calculateTotalScore(round.holeScores)}
                   </span>
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                   {(() => {
                     const firstName = round.playingPartnerRound?.golferFirstName || round.markerFirstName;
                     const lastName = round.playingPartnerRound?.golferLastName || round.markerLastName;
@@ -613,11 +613,11 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm">
                   {round.isSubmitted ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300">
                       Submitted
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
                       Not Submitted
                     </span>
                   )}
@@ -625,12 +625,12 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
               </tr>
               {/* Expandable hole scores row */}
               {expandedRows.has(round.id) && round.holeScores && round.holeScores.length > 0 && (
-                <tr className="bg-gray-50">
+                <tr className="bg-gray-50 dark:bg-gray-700">
                   <td colSpan={12} className="px-4 py-4">
                     <div className="flex flex-col xl:flex-row gap-8">
                       {/* Golfer's scorecard */}
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                           {round.golferFirstName || ''} {round.golferLastName || 'Golfer'}
                         </h4>
                         <ScorecardTable holeScores={round.holeScores} />
@@ -639,7 +639,7 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
                       {/* Playing partner's scorecard */}
                       {round.playingPartnerRound?.holeScores && round.playingPartnerRound.holeScores.length > 0 && (
                         <div>
-                          <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             {round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}
                           </h4>
                           <ScorecardTable holeScores={round.playingPartnerRound.holeScores} />
@@ -658,35 +658,35 @@ function RoundsTab({ golflinkNo }: { golflinkNo: string }) {
       {/* Pagination */}
       {data.pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Page {data.pagination.page} of {data.pagination.totalPages}
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setPage(1)}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               First
             </button>
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Previous
             </button>
             <button
               onClick={() => setPage((p) => Math.min(data.pagination.totalPages, p + 1))}
               disabled={page >= data.pagination.totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Next
             </button>
             <button
               onClick={() => setPage(data.pagination.totalPages)}
               disabled={page >= data.pagination.totalPages}
-              className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
             >
               Last
             </button>
@@ -751,9 +751,9 @@ export function GolferDetail() {
   if (isError) {
     return (
       <div className="space-y-4">
-        <button onClick={() => navigate(-1)} className="text-blue-600 hover:underline">&larr; Back</button>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">
+        <button onClick={() => navigate(-1)} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Back</button>
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-700 dark:text-red-400">
             Error loading golfer: {error instanceof Error ? error.message : 'Unknown error'}
           </p>
         </div>
@@ -764,9 +764,9 @@ export function GolferDetail() {
   if (!golfer || Object.keys(golfer).length === 0) {
     return (
       <div className="space-y-4">
-        <button onClick={() => navigate(-1)} className="text-blue-600 hover:underline">&larr; Back</button>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-700">Golfer not found</p>
+        <button onClick={() => navigate(-1)} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Back</button>
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <p className="text-yellow-700 dark:text-yellow-400">Golfer not found</p>
         </div>
       </div>
     );
@@ -776,15 +776,15 @@ export function GolferDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate(-1)} className="text-blue-600 hover:underline">&larr; Back</button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <button onClick={() => navigate(-1)} className="text-blue-600 dark:text-blue-400 hover:underline">&larr; Back</button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           {golfer.firstName} {golfer.lastName}
         </h1>
-        <span className="text-gray-500">({golfer.golflinkNo})</span>
+        <span className="text-gray-500 dark:text-gray-400">({golfer.golflinkNo})</span>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-4">
           {tabs.map((tab) => (
             <button
@@ -792,8 +792,8 @@ export function GolferDetail() {
               onClick={() => setActiveTab(tab.id)}
               className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
             >
               {tab.label}
@@ -803,111 +803,111 @@ export function GolferDetail() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
         {activeTab === 'profile' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 border-b pb-2">Personal Information</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Personal Information</h3>
               <dl className="space-y-2">
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">First Name</dt>
-                  <dd className="text-gray-900">{golfer.firstName || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">First Name</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.firstName || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Last Name</dt>
-                  <dd className="text-gray-900">{golfer.lastName || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Last Name</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.lastName || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Email</dt>
-                  <dd className="text-gray-900">{golfer.email || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Email</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.email || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Mobile</dt>
-                  <dd className="text-gray-900">{golfer.mobileNo || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Mobile</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.mobileNo || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Gender</dt>
-                  <dd className="text-gray-900">{golfer.gender === 'm' ? 'Male' : golfer.gender === 'f' ? 'Female' : '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Gender</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.gender === 'm' ? 'Male' : golfer.gender === 'f' ? 'Female' : '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Date of Birth</dt>
-                  <dd className="text-gray-900">{formatDate(golfer.dateOfBirth)}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Date of Birth</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{formatDate(golfer.dateOfBirth)}</dd>
                 </div>
               </dl>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 border-b pb-2">Golf Information</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Golf Information</h3>
               <dl className="space-y-2">
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">GA Number</dt>
-                  <dd className="text-gray-900 font-mono">{golfer.golflinkNo || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">GA Number</dt>
+                  <dd className="text-gray-900 dark:text-gray-100 font-mono">{golfer.golflinkNo || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Club</dt>
-                  <dd className="text-gray-900">{getClubName(golfer.golflinkNo)}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Club</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{getClubName(golfer.golflinkNo)}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Handicap</dt>
-                  <dd className="text-gray-900">{golfer.handicap ?? golfer.golfLinkHandicap ?? '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Handicap</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.handicap ?? golfer.golfLinkHandicap ?? '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Token Balance</dt>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Token Balance</dt>
                   <dd>
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      golfer.tokenBalance > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      golfer.tokenBalance > 0 ? 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                     }`}>
                       {golfer.tokenBalance}
                     </span>
                   </dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Member Since</dt>
-                  <dd className="text-gray-900">{formatDate(golfer.memberSince)}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Member Since</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{formatDate(golfer.memberSince)}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">State</dt>
-                  <dd className="text-gray-900">{golfer.state?.shortName || '-'}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 border-b pb-2">App Information</h3>
-              <dl className="space-y-2">
-                <div className="flex">
-                  <dt className="w-32 text-gray-500">App Version</dt>
-                  <dd className="text-gray-900">{golfer.sogoAppVersion || '-'}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-32 text-gray-500">Device OS</dt>
-                  <dd className="text-gray-900">{golfer.deviceOS || '-'}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-32 text-gray-500">OS Version</dt>
-                  <dd className="text-gray-900">{golfer.deviceOSVersion || '-'}</dd>
-                </div>
-                <div className="flex">
-                  <dt className="w-32 text-gray-500">Device</dt>
-                  <dd className="text-gray-900">{golfer.deviceModel || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">State</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.state?.shortName || '-'}</dd>
                 </div>
               </dl>
             </div>
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900 border-b pb-2">Status</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">App Information</h3>
               <dl className="space-y-2">
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">User Type</dt>
-                  <dd className="text-gray-900 capitalize">{golfer.userType || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">App Version</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.sogoAppVersion || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Signup Status</dt>
-                  <dd className="text-gray-900">{golfer.signupStatus || '-'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Device OS</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.deviceOS || '-'}</dd>
                 </div>
                 <div className="flex">
-                  <dt className="w-32 text-gray-500">Inactive</dt>
-                  <dd className="text-gray-900">{golfer.isInactive ? 'Yes' : 'No'}</dd>
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">OS Version</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.deviceOSVersion || '-'}</dd>
+                </div>
+                <div className="flex">
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Device</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.deviceModel || '-'}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900 dark:text-white border-b border-gray-200 dark:border-gray-700 pb-2">Status</h3>
+              <dl className="space-y-2">
+                <div className="flex">
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">User Type</dt>
+                  <dd className="text-gray-900 dark:text-gray-100 capitalize">{golfer.userType || '-'}</dd>
+                </div>
+                <div className="flex">
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Signup Status</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.signupStatus || '-'}</dd>
+                </div>
+                <div className="flex">
+                  <dt className="w-32 text-gray-500 dark:text-gray-400">Inactive</dt>
+                  <dd className="text-gray-900 dark:text-gray-100">{golfer.isInactive ? 'Yes' : 'No'}</dd>
                 </div>
               </dl>
             </div>
@@ -922,7 +922,7 @@ export function GolferDetail() {
           <TransactionsTab email={golfer.email} tokenBalance={golfer.tokenBalance ?? 0} />
         )}
         {activeTab === 'transactions' && !golfer.email && (
-          <div className="text-gray-500 text-center py-8">
+          <div className="text-gray-500 dark:text-gray-400 text-center py-8">
             No email address available for this golfer.
           </div>
         )}

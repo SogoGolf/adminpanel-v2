@@ -58,14 +58,14 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <thead className="bg-gray-50 dark:bg-gray-700">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                  className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header.isPlaceholder
                     ? null
@@ -75,11 +75,11 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
             </tr>
           ))}
         </thead>
-        <tbody className="bg-white divide-y divide-gray-200">
+        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="hover:bg-gray-50">
+            <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="px-2 sm:px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                <td key={cell.id} className="px-2 sm:px-4 py-3 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
@@ -88,7 +88,7 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         </tbody>
       </table>
       {transactions.length === 0 && (
-        <p className="text-center text-gray-500 py-8">No transactions found</p>
+        <p className="text-center text-gray-500 dark:text-gray-400 py-8">No transactions found</p>
       )}
     </div>
   );

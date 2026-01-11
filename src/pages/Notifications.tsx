@@ -137,13 +137,13 @@ export function Notifications() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Send Notification</h1>
-        <p className="text-sm text-gray-600 mt-1">Send push notifications to golfers</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Send Notification</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Send push notifications to golfers</p>
       </div>
 
       {/* Audience Selection */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Select Audience</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Select Audience</h2>
 
         <div className="space-y-3">
           <label className="flex items-center gap-3 cursor-pointer">
@@ -155,7 +155,7 @@ export function Notifications() {
               onChange={() => handleAudienceTypeChange('rounds-in-progress')}
               className="w-4 h-4 text-blue-600"
             />
-            <span className="text-gray-900">Golfers with rounds in progress (today)</span>
+            <span className="text-gray-900 dark:text-gray-100">Golfers with rounds in progress (today)</span>
           </label>
 
           <label className="flex items-center gap-3 cursor-pointer">
@@ -167,14 +167,14 @@ export function Notifications() {
               onChange={() => handleAudienceTypeChange('gender')}
               className="w-4 h-4 text-blue-600"
             />
-            <span className="text-gray-900">By Gender</span>
+            <span className="text-gray-900 dark:text-gray-100">By Gender</span>
           </label>
           {form.audienceType === 'gender' && (
             <div className="ml-7">
               <select
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
                 <option value="">Select gender...</option>
                 {genderOptions.map((opt) => (
@@ -198,7 +198,7 @@ export function Notifications() {
                   onChange={() => handleAudienceTypeChange('club')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-gray-900">By Club (all members)</span>
+                <span className="text-gray-900 dark:text-gray-100">By Club (all members)</span>
               </label>
               {form.audienceType === 'club' && (
                 <div className="ml-7">
@@ -207,7 +207,7 @@ export function Notifications() {
                     value={form.clubId}
                     onChange={(e) => setForm({ ...form, clubId: e.target.value })}
                     placeholder="Enter club ID (e.g., 50135)"
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
               )}
@@ -226,14 +226,14 @@ export function Notifications() {
                   onChange={() => handleAudienceTypeChange('state')}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-gray-900">By State</span>
+                <span className="text-gray-900 dark:text-gray-100">By State</span>
               </label>
               {form.audienceType === 'state' && (
                 <div className="ml-7">
                   <select
                     value={form.state}
                     onChange={(e) => setForm({ ...form, state: e.target.value })}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Select state...</option>
                     {stateOptions.map((state) => (
@@ -256,7 +256,7 @@ export function Notifications() {
               onChange={() => handleAudienceTypeChange('single')}
               className="w-4 h-4 text-blue-600"
             />
-            <span className="text-gray-900">Single Golfer (by GA Number)</span>
+            <span className="text-gray-900 dark:text-gray-100">Single Golfer (by GA Number)</span>
           </label>
           {form.audienceType === 'single' && (
             <div className="ml-7">
@@ -265,16 +265,16 @@ export function Notifications() {
                 value={form.golflinkNo}
                 onChange={(e) => setForm({ ...form, golflinkNo: e.target.value })}
                 placeholder="Enter GA number"
-                className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 ${golferClubError ? 'border-red-500' : 'border-gray-300'}`}
+                className={`px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-64 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${golferClubError ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
               />
               {golferClubError && (
-                <p className="mt-1 text-sm text-red-600">{golferClubError}</p>
+                <p className="mt-1 text-sm text-red-600 dark:text-red-400">{golferClubError}</p>
               )}
             </div>
           )}
         </div>
 
-        <div className="pt-4 border-t border-gray-200">
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <button
             onClick={handleGetAudienceCount}
             disabled={!isAudienceValid() || audienceCountMutation.isPending}
@@ -284,18 +284,18 @@ export function Notifications() {
           </button>
 
           {audienceCountMutation.isError && (
-            <p className="mt-2 text-sm text-red-600">
+            <p className="mt-2 text-sm text-red-600 dark:text-red-400">
               Error: {audienceCountMutation.error instanceof Error ? audienceCountMutation.error.message : 'Failed to get audience count'}
             </p>
           )}
 
           {audienceResult && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-lg font-semibold text-blue-900">
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+              <p className="text-lg font-semibold text-blue-900 dark:text-blue-300">
                 {audienceResult.count} golfer{audienceResult.count !== 1 ? 's' : ''} will receive this notification
               </p>
               {audienceResult.count === 0 && (
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-sm text-blue-700 dark:text-blue-400 mt-1">
                   No golfers match the selected criteria.
                 </p>
               )}
@@ -305,11 +305,11 @@ export function Notifications() {
       </div>
 
       {/* Message Composer */}
-      <div className="bg-white rounded-lg shadow p-6 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900">Compose Message</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Compose Message</h2>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Title <span className="text-red-500">*</span>
           </label>
           <input
@@ -317,13 +317,13 @@ export function Notifications() {
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             placeholder="Notification title"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             maxLength={100}
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Message <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -331,10 +331,10 @@ export function Notifications() {
             onChange={(e) => setForm({ ...form, message: e.target.value })}
             placeholder="Notification message"
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             maxLength={500}
           />
-          <p className="text-xs text-gray-500 mt-1">{form.message.length}/500 characters</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{form.message.length}/500 characters</p>
         </div>
       </div>
 
@@ -349,7 +349,7 @@ export function Notifications() {
         </button>
 
         {!canSend && audienceResult && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {audienceResult.count === 0
               ? 'No recipients to send to'
               : !form.title.trim() || !form.message.trim()
@@ -361,20 +361,20 @@ export function Notifications() {
 
       {/* Send Result */}
       {sendNotificationMutation.isError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-700">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <p className="text-red-700 dark:text-red-400">
             Error: {sendNotificationMutation.error instanceof Error ? sendNotificationMutation.error.message : 'Failed to send notification'}
           </p>
         </div>
       )}
 
       {sendResult && (
-        <div className={`${sendResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'} border rounded-lg p-4`}>
-          <p className={sendResult.success ? 'text-green-700' : 'text-red-700'}>
+        <div className={`${sendResult.success ? 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800'} border rounded-lg p-4`}>
+          <p className={sendResult.success ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}>
             {sendResult.message}
           </p>
           {sendResult.success && sendResult.recipientCount > 0 && (
-            <p className="text-green-600 text-sm mt-1">
+            <p className="text-green-600 dark:text-green-400 text-sm mt-1">
               Sent to {sendResult.recipientCount} recipient{sendResult.recipientCount !== 1 ? 's' : ''}
             </p>
           )}

@@ -57,7 +57,7 @@ function ColumnFilter({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
       >
         <option value="">All</option>
         {options.map((opt) => (
@@ -78,13 +78,13 @@ function ColumnFilter({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         data-filter-id={columnId}
-        className="w-full px-2 py-1 pr-6 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="w-full px-2 py-1 pr-6 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
       />
       {value && (
         <button
           type="button"
           onClick={() => onChange('')}
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -316,7 +316,7 @@ export function Golfers() {
         cell: (info) => (
           <Link
             to={`/golfers/${info.row.original.golflinkNo}`}
-            className="text-blue-600 hover:text-blue-800 hover:underline text-sm font-medium"
+            className="text-blue-600 hover:text-blue-800 dark:text-cyan-400 dark:hover:text-cyan-300 hover:underline text-sm font-medium"
           >
             Info
           </Link>
@@ -398,7 +398,7 @@ export function Golfers() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Golfers</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Golfers</h1>
         {hasActiveFilters && (
           <button
             onClick={clearAllFilters}
@@ -425,10 +425,10 @@ export function Golfers() {
 
       {data && (
         <>
-          <div className="text-sm text-gray-600 flex items-center gap-2">
+          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
             <span>
               Showing {data.data.length} of {data.totalCount.toLocaleString()} golfers
-              {hasActiveFilters && <span className="ml-1 text-blue-600">(filtered)</span>}
+              {hasActiveFilters && <span className="ml-1 text-blue-600 dark:text-blue-400">(filtered)</span>}
             </span>
             {isFetching && (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -521,16 +521,16 @@ export function Golfers() {
           </div>
 
           {/* Desktop table view */}
-          <div className={`hidden lg:block bg-white rounded-lg shadow overflow-hidden transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
+          <div className={`hidden lg:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-opacity ${isFetching ? 'opacity-70' : ''}`}>
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <th
                           key={header.id}
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                         >
                           {header.isPlaceholder
                             ? null
@@ -540,7 +540,7 @@ export function Golfers() {
                     </tr>
                   ))}
                   {/* Filter row */}
-                  <tr className="bg-gray-100">
+                  <tr className="bg-gray-100 dark:bg-gray-600">
                     <th className="px-4 py-2">
                       {/* No filter for actions */}
                     </th>
@@ -610,11 +610,11 @@ export function Golfers() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="hover:bg-gray-50">
+                    <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       {row.getVisibleCells().map((cell) => (
-                        <td key={cell.id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        <td key={cell.id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </td>
                       ))}
@@ -627,35 +627,35 @@ export function Golfers() {
 
           {/* Pagination */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               Page {data.page} of {data.totalPages}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage(1)}
                 disabled={page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 First
               </button>
               <button
                 onClick={() => setPage((p: number) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage((p: number) => Math.min(data.totalPages, p + 1))}
                 disabled={page >= data.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Next
               </button>
               <button
                 onClick={() => setPage(data.totalPages)}
                 disabled={page >= data.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Last
               </button>

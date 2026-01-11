@@ -30,46 +30,46 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
   };
 
   const SubtotalRow = ({ label, holes }: { label: string; holes: HoleScore[] }) => (
-    <tr className="bg-gray-200 font-semibold">
-      <td className="px-2 py-1 text-xs">{label}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'par')}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'meters')}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'strokes')}</td>
-      <td className="px-2 py-1 text-xs text-right">{sumField(holes, 'score')}</td>
+    <tr className="bg-gray-200 dark:bg-gray-600 font-semibold">
+      <td className="px-2 py-1 text-xs text-gray-900 dark:text-gray-100">{label}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'par')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'meters')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'strokes')}</td>
+      <td className="px-2 py-1 text-xs text-right text-gray-900 dark:text-gray-100">{sumField(holes, 'score')}</td>
     </tr>
   );
 
   return (
-    <table className="text-xs border border-gray-300">
-      <thead className="bg-gray-100">
+    <table className="text-xs border border-gray-300 dark:border-gray-600">
+      <thead className="bg-gray-100 dark:bg-gray-700">
         <tr>
-          <th className="px-2 py-1 text-left font-medium text-gray-600">Hole</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Par</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Meters</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Strokes</th>
-          <th className="px-2 py-1 text-right font-medium text-gray-600">Points</th>
+          <th className="px-2 py-1 text-left font-medium text-gray-600 dark:text-gray-300">Hole</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Par</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Meters</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Strokes</th>
+          <th className="px-2 py-1 text-right font-medium text-gray-600 dark:text-gray-300">Points</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-gray-200">
+      <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
         {is18Hole ? (
           <>
             {front9.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Front 9" holes={front9} />
             {back9.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Back 9" holes={back9} />
@@ -78,12 +78,12 @@ function ScorecardTable({ holeScores }: { holeScores: HoleScore[] }) {
         ) : (
           <>
             {sortedHoles.map((hole) => (
-              <tr key={hole.holeNumber} className="hover:bg-gray-50">
-                <td className="px-2 py-1">{hole.holeNumber}</td>
-                <td className="px-2 py-1 text-right">{hole.par ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.meters ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.strokes ?? '-'}</td>
-                <td className="px-2 py-1 text-right">{hole.score ?? '-'}</td>
+              <tr key={hole.holeNumber} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <td className="px-2 py-1 text-gray-900 dark:text-gray-100">{hole.holeNumber}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.par ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.meters ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.strokes ?? '-'}</td>
+                <td className="px-2 py-1 text-right text-gray-900 dark:text-gray-100">{hole.score ?? '-'}</td>
               </tr>
             ))}
             <SubtotalRow label="Total" holes={sortedHoles} />
@@ -129,18 +129,18 @@ function ExpandedRoundDetails({ roundId }: { roundId: string }) {
   }
 
   if (isError || !round) {
-    return <div className="text-red-600 py-4">Failed to load round details</div>;
+    return <div className="text-red-600 dark:text-red-400 py-4">Failed to load round details</div>;
   }
 
   if (!round.holeScores || round.holeScores.length === 0) {
-    return <div className="text-gray-500 py-4">No hole scores available</div>;
+    return <div className="text-gray-500 dark:text-gray-400 py-4">No hole scores available</div>;
   }
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       {/* Golfer's scorecard */}
       <div>
-        <h4 className="text-sm font-semibold text-gray-900 mb-2">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
           {round.golferFirstName || ''} {round.golferLastName || 'Golfer'}
         </h4>
         <ScorecardTable holeScores={round.holeScores} />
@@ -149,7 +149,7 @@ function ExpandedRoundDetails({ roundId }: { roundId: string }) {
       {/* Playing partner's scorecard */}
       {round.playingPartnerRound?.holeScores && round.playingPartnerRound.holeScores.length > 0 && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-900 mb-2">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
             {round.playingPartnerRound.golferFirstName || ''} {round.playingPartnerRound.golferLastName || 'Playing Partner'}
           </h4>
           <ScorecardTable holeScores={round.playingPartnerRound.holeScores} />
@@ -431,17 +431,17 @@ export function ClosedCompDetail() {
     const baseClasses = 'px-2 py-1 rounded-full text-xs font-medium';
     switch (status) {
       case 'active':
-        return <span className={`${baseClasses} bg-green-100 text-green-800`}>Active</span>;
+        return <span className={`${baseClasses} bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-300`}>Active</span>;
       case 'closed':
-        return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>Closed</span>;
+        return <span className={`${baseClasses} bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300`}>Closed</span>;
       case 'accepted':
-        return <span className={`${baseClasses} bg-blue-100 text-blue-800`}>Accepted</span>;
+        return <span className={`${baseClasses} bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300`}>Accepted</span>;
       case 'blocked':
-        return <span className={`${baseClasses} bg-red-100 text-red-800`}>Blocked</span>;
+        return <span className={`${baseClasses} bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-300`}>Blocked</span>;
       case 'invited':
-        return <span className={`${baseClasses} bg-yellow-100 text-yellow-800`}>Invited</span>;
+        return <span className={`${baseClasses} bg-yellow-100 dark:bg-yellow-900/50 text-yellow-800 dark:text-yellow-300`}>Invited</span>;
       default:
-        return <span className={`${baseClasses} bg-gray-100 text-gray-800`}>{status}</span>;
+        return <span className={`${baseClasses} bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300`}>{status}</span>;
     }
   };
 
@@ -453,7 +453,7 @@ export function ClosedCompDetail() {
     };
     const suffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
     return (
-      <span className={`font-bold text-lg ${colors[rank] || 'text-gray-700'}`}>
+      <span className={`font-bold text-lg ${colors[rank] || 'text-gray-700 dark:text-gray-300'}`}>
         {rank}{suffix}
       </span>
     );
@@ -469,8 +469,8 @@ export function ClosedCompDetail() {
 
   if (!comp) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Competition not found</p>
+      <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
+        <p className="text-red-800 dark:text-red-400">Competition not found</p>
       </div>
     );
   }
@@ -489,24 +489,24 @@ export function ClosedCompDetail() {
         <div>
           <button
             onClick={() => navigate('/closed-comps')}
-            className="text-blue-600 hover:text-blue-800 text-sm mb-2 flex items-center gap-1"
+            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-sm mb-2 flex items-center gap-1"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             Back to List
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{comp.name}</h1>
-          <p className="text-gray-500">
-            Invite Code: <code className="bg-gray-100 px-2 py-1 rounded font-mono text-lg">{comp.inviteCode}</code>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{comp.name}</h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Invite Code: <code className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-mono text-lg text-gray-900 dark:text-gray-100">{comp.inviteCode}</code>
           </p>
         </div>
         {getStatusBadge(comp.status)}
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="border-b border-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="border-b border-gray-200 dark:border-gray-700">
           <nav className="flex -mb-px overflow-x-auto">
             {tabs.map((tab) => (
               <button
@@ -514,13 +514,13 @@ export function ClosedCompDetail() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab.key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
               >
                 {tab.label}
                 {tab.count !== undefined && (
-                  <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                  <span className="ml-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full text-xs">
                     {tab.count}
                   </span>
                 )}
@@ -536,58 +536,58 @@ export function ClosedCompDetail() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Owner</label>
-                    <p className="text-gray-900">{comp.ownerFirstName} {comp.ownerLastName}</p>
-                    <p className="text-sm text-gray-500">{comp.ownerEmail}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Owner</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.ownerFirstName} {comp.ownerLastName}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{comp.ownerEmail}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Competition Type</label>
-                    <p className="text-gray-900">{comp.compTypes?.join(', ') || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Competition Type</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.compTypes?.join(', ') || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Max Rounds</label>
-                    <p className="text-gray-900">{comp.maxRounds}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Max Rounds</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.maxRounds}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Holes per Round</label>
-                    <p className="text-gray-900">{comp.holesPerRound}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Holes per Round</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.holesPerRound}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Round Selection Mode</label>
-                    <p className="text-gray-900">
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Round Selection Mode</label>
+                    <p className="text-gray-900 dark:text-gray-100">
                       {comp.roundSelectionMode === 'first' ? 'First submitted (no replacements)' : 'Best rounds (can replace worse)'}
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Participants</label>
-                    <p className="text-gray-900">{comp.participantCount}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Participants</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.participantCount}</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Prize</label>
-                    <p className="text-gray-900">{comp.prize || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Prize</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.prize || 'N/A'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Start Date</label>
-                    <p className="text-gray-900">{formatDate(comp.startDate)}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Start Date</label>
+                    <p className="text-gray-900 dark:text-gray-100">{formatDate(comp.startDate)}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">End Date</label>
-                    <p className="text-gray-900">{formatDate(comp.endDate)}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">End Date</label>
+                    <p className="text-gray-900 dark:text-gray-100">{formatDate(comp.endDate)}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Timezone</label>
-                    <p className="text-gray-900">{comp.timezone}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Timezone</label>
+                    <p className="text-gray-900 dark:text-gray-100">{comp.timezone}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Created</label>
-                    <p className="text-gray-900">{formatDateTime(comp.createdDate)}</p>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">Created</label>
+                    <p className="text-gray-900 dark:text-gray-100">{formatDateTime(comp.createdDate)}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="border-t pt-6 flex flex-wrap gap-3">
+              <div className="border-t dark:border-gray-700 pt-6 flex flex-wrap gap-3">
                 <button
                   onClick={handleOpenEditModal}
                   className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -655,23 +655,23 @@ export function ClosedCompDetail() {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
                 {participants.map((p) => (
-                  <div key={p.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                  <div key={p.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-white">
                           {p.golferFirstName} {p.golferLastName}
-                          {p.isOwner && <span className="ml-2 text-xs text-blue-600">(Owner)</span>}
+                          {p.isOwner && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(Owner)</span>}
                         </p>
-                        <p className="text-sm text-gray-500">{p.golferEmail}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{p.golferEmail}</p>
                       </div>
                       {getStatusBadge(p.status)}
                     </div>
-                    <div className="flex justify-between items-center text-sm text-gray-500">
+                    <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400">
                       <span>{p.roundsSubmitted} round{p.roundsSubmitted !== 1 ? 's' : ''}</span>
                       <span>Joined {formatDate(p.acceptedDate)}</span>
                     </div>
                     {!p.isOwner && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                         <button
                           onClick={() => {
                             setSelectedParticipant(p);
@@ -679,8 +679,8 @@ export function ClosedCompDetail() {
                           }}
                           className={`w-full px-3 py-2 rounded text-sm ${
                             p.status === 'blocked'
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-red-100 text-red-700 hover:bg-red-200'
+                              ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70'
+                              : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/70'
                           }`}
                         >
                           {p.status === 'blocked' ? 'Unblock' : 'Block'}
@@ -690,35 +690,35 @@ export function ClosedCompDetail() {
                   </div>
                 ))}
                 {participants.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">No participants</div>
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">No participants</div>
                 )}
               </div>
 
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Owner</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rounds</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Joined</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {participants.map((p) => (
-                      <tr key={p.id}>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                      <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">
                           {p.golferFirstName} {p.golferLastName}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{p.golferEmail}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{p.golferEmail}</td>
                         <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(p.status)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{p.isOwner ? 'Yes' : 'No'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">{p.roundsSubmitted}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{p.isOwner ? 'Yes' : 'No'}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{p.roundsSubmitted}</td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(p.acceptedDate)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -730,8 +730,8 @@ export function ClosedCompDetail() {
                               }}
                               className={`px-3 py-1 rounded text-sm ${
                                 p.status === 'blocked'
-                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                  : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                  ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/70'
+                                  : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/70'
                               }`}
                             >
                               {p.status === 'blocked' ? 'Unblock' : 'Block'}
@@ -742,7 +742,7 @@ export function ClosedCompDetail() {
                     ))}
                     {participants.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                           No participants
                         </td>
                       </tr>
@@ -759,88 +759,88 @@ export function ClosedCompDetail() {
               {/* Mobile Card View */}
               <div className="md:hidden space-y-3">
                 {rounds.map((r) => (
-                  <div key={r.id} className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+                  <div key={r.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
                     <div className="p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <p className="font-medium text-gray-900">
+                          <p className="font-medium text-gray-900 dark:text-white">
                             {r.golferFirstName} {r.golferLastName}
                           </p>
-                          <p className="text-sm text-gray-500">{r.clubName}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{r.clubName}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-gray-900">{r.score}</p>
-                          <p className="text-xs text-gray-500">{r.compType}</p>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{r.score}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{r.compType}</p>
                         </div>
                       </div>
-                      <div className="flex justify-between items-center text-sm text-gray-500 mb-2">
+                      <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mb-2">
                         <span>Played: {formatDate(r.roundDate)}</span>
                         <span>Partner: <PlayingPartnerCell roundId={r.roundId} /></span>
                       </div>
                       <button
                         onClick={() => toggleRoundExpansion(r.roundId)}
-                        className="w-full text-blue-600 hover:text-blue-800 text-sm font-medium py-2 border-t border-gray-100 mt-2"
+                        className="w-full text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium py-2 border-t border-gray-100 dark:border-gray-700 mt-2"
                       >
                         {expandedRounds.has(r.roundId) ? 'Hide Scorecard' : 'View Scorecard'}
                       </button>
                     </div>
                     {expandedRounds.has(r.roundId) && (
-                      <div className="bg-gray-50 p-4 border-t border-gray-200 overflow-x-auto">
+                      <div className="bg-gray-50 dark:bg-gray-700 p-4 border-t border-gray-200 dark:border-gray-600 overflow-x-auto">
                         <ExpandedRoundDetails roundId={r.roundId} />
                       </div>
                     )}
                   </div>
                 ))}
                 {rounds.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">No rounds submitted</div>
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">No rounds submitted</div>
                 )}
               </div>
 
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"></th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Golfer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Club</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Round Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Playing Partner</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase"></th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Golfer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Score</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Type</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Club</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Round Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Submitted</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Playing Partner</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {rounds.map((r) => (
                       <React.Fragment key={r.id}>
-                        <tr className="hover:bg-gray-50">
+                        <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
                           <td className="px-4 py-3 whitespace-nowrap">
                             <button
                               onClick={() => toggleRoundExpansion(r.roundId)}
-                              className="text-blue-600 hover:text-blue-800 hover:underline text-xs font-medium"
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline text-xs font-medium"
                             >
                               {expandedRounds.has(r.roundId) ? 'Hide' : 'Details'}
                             </button>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
+                          <td className="px-4 py-3 whitespace-nowrap text-gray-900 dark:text-gray-100">
                             {r.golferFirstName} {r.golferLastName}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap font-bold">{r.score}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.compType}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{r.clubName}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 py-3 whitespace-nowrap font-bold text-gray-900 dark:text-white">{r.score}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{r.compType}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{r.clubName}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {formatDate(r.roundDate)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             {formatDateTime(r.submittedDate)}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                             <PlayingPartnerCell roundId={r.roundId} />
                           </td>
                         </tr>
                         {expandedRounds.has(r.roundId) && (
-                          <tr className="bg-gray-50">
+                          <tr className="bg-gray-50 dark:bg-gray-700">
                             <td colSpan={8} className="px-4 py-4">
                               <ExpandedRoundDetails roundId={r.roundId} />
                             </td>
@@ -850,7 +850,7 @@ export function ClosedCompDetail() {
                     ))}
                     {rounds.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                        <td colSpan={8} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                           No rounds submitted
                         </td>
                       </tr>
@@ -866,7 +866,7 @@ export function ClosedCompDetail() {
             <div>
               {leaderboard && (
                 <div className="mb-4">
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {leaderboard.compType} leaderboard - Best {leaderboard.maxRounds} rounds count towards total
                   </p>
                 </div>
@@ -877,60 +877,60 @@ export function ClosedCompDetail() {
                 {leaderboard?.leaderboard.map((entry) => (
                   <div
                     key={entry.golferId}
-                    className={`bg-white border rounded-lg p-4 shadow-sm ${
-                      entry.rank <= 3 ? 'border-yellow-300 bg-yellow-50/50' : 'border-gray-200'
+                    className={`bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-sm ${
+                      entry.rank <= 3 ? 'border-yellow-300 dark:border-yellow-600 bg-yellow-50/50 dark:bg-yellow-900/20' : 'border-gray-200 dark:border-gray-700'
                     }`}
                   >
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-3">
                         {getRankDisplay(entry.rank)}
                         <div>
-                          <p className="font-medium text-gray-900">{entry.golferName}</p>
-                          <p className="text-xs text-gray-500">{entry.golferEmail}</p>
+                          <p className="font-medium text-gray-900 dark:text-white">{entry.golferName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{entry.golferEmail}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-900">{entry.totalScore}</p>
-                        <p className="text-xs text-gray-500">{entry.roundsCount} round{entry.roundsCount !== 1 ? 's' : ''}</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{entry.totalScore}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{entry.roundsCount} round{entry.roundsCount !== 1 ? 's' : ''}</p>
                       </div>
                     </div>
                   </div>
                 ))}
                 {(!leaderboard?.leaderboard || leaderboard.leaderboard.length === 0) && (
-                  <div className="text-center py-8 text-gray-500">No entries yet</div>
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">No entries yet</div>
                 )}
               </div>
 
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rank</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Golfer</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Score</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rounds</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rank</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Golfer</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Score</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Rounds</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {leaderboard?.leaderboard.map((entry) => (
-                      <tr key={entry.golferId} className={entry.rank <= 3 ? 'bg-yellow-50/50' : ''}>
+                      <tr key={entry.golferId} className={entry.rank <= 3 ? 'bg-yellow-50/50 dark:bg-yellow-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
                         <td className="px-4 py-3 whitespace-nowrap">{getRankDisplay(entry.rank)}</td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="font-medium">{entry.golferName}</div>
-                          <div className="text-xs text-gray-500">{entry.golferEmail}</div>
+                          <div className="font-medium text-gray-900 dark:text-white">{entry.golferName}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{entry.golferEmail}</div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <span className="text-xl font-bold">{entry.totalScore}</span>
+                          <span className="text-xl font-bold text-gray-900 dark:text-white">{entry.totalScore}</span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {entry.roundsCount}
                         </td>
                       </tr>
                     ))}
                     {(!leaderboard?.leaderboard || leaderboard.leaderboard.length === 0) && (
                       <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                           No entries yet
                         </td>
                       </tr>
@@ -1031,13 +1031,13 @@ export function ClosedCompDetail() {
 
       {/* Invite Golfer Modal */}
       {showInviteModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Invite Golfer to Competition</h2>
+        <div className="fixed inset-0 bg-black/30 dark:bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Invite Golfer to Competition</h2>
               <button
                 onClick={handleCloseInviteModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1047,7 +1047,7 @@ export function ClosedCompDetail() {
 
             <div className="p-6 space-y-4 overflow-y-auto flex-1">
               {inviteError && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 text-sm">
+                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md p-3 text-red-700 dark:text-red-400 text-sm">
                   {inviteError}
                 </div>
               )}
@@ -1062,21 +1062,21 @@ export function ClosedCompDetail() {
                 className="flex flex-wrap gap-4 items-end"
               >
                 <div className="flex-1 min-w-[200px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Search</label>
                   <input
                     type="text"
                     value={inviteSearch}
                     onChange={(e) => setInviteSearch(e.target.value)}
                     placeholder="Name, email, or GolfLink number..."
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">State</label>
                   <select
                     value={inviteState}
                     onChange={(e) => setInviteState(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">All States</option>
                     <option value="NSW">NSW</option>
@@ -1108,15 +1108,15 @@ export function ClosedCompDetail() {
               */}
 
               {/* Placeholder message */}
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 Invite functionality coming soon.
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end">
               <button
                 onClick={handleCloseInviteModal}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Close
               </button>
@@ -1127,13 +1127,13 @@ export function ClosedCompDetail() {
 
       {/* Edit Competition Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Edit Competition</h2>
+        <div className="fixed inset-0 bg-black/30 dark:bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Edit Competition</h2>
               <button
                 onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1143,55 +1143,55 @@ export function ClosedCompDetail() {
 
             <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
               {editError && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 text-sm">
+                <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md p-3 text-red-700 dark:text-red-400 text-sm">
                   {editError}
                 </div>
               )}
 
               {/* Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Competition Name *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Competition Name *</label>
                 <input
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   required
                 />
               </div>
 
               {/* Prize */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Prize</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prize</label>
                 <input
                   type="text"
                   value={editForm.prize}
                   onChange={(e) => setEditForm({ ...editForm, prize: e.target.value })}
                   placeholder="e.g., Bottle of wine for the winner!"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
 
               {/* Max Rounds and Holes per Round */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Max Rounds *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Rounds *</label>
                   <input
                     type="number"
                     min="1"
                     max="20"
                     value={editForm.maxRounds}
                     onChange={(e) => setEditForm({ ...editForm, maxRounds: parseInt(e.target.value) || 1 })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Holes per Round *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Holes per Round *</label>
                   <select
                     value={editForm.holesPerRound}
                     onChange={(e) => setEditForm({ ...editForm, holesPerRound: parseInt(e.target.value) })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value={9}>9 holes</option>
                     <option value={18}>18 holes</option>
@@ -1201,16 +1201,16 @@ export function ClosedCompDetail() {
 
               {/* Round Selection Mode */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Round Selection Mode</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Round Selection Mode</label>
                 <select
                   value={editForm.roundSelectionMode}
                   onChange={(e) => setEditForm({ ...editForm, roundSelectionMode: e.target.value as 'best' | 'first' })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="best">Best rounds - new rounds can replace worse ones</option>
                   <option value="first">First submitted - lock in rounds, no replacements</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   {editForm.roundSelectionMode === 'best'
                     ? "Each player's best rounds are kept. If they submit a better round, it replaces their worst."
                     : "Once a player reaches max rounds, no more can be added. First submitted rounds are final."}
@@ -1220,22 +1220,22 @@ export function ClosedCompDetail() {
               {/* Start and End Dates */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date *</label>
                   <input
                     type="date"
                     value={editForm.startDate}
                     onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date *</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date *</label>
                   <input
                     type="date"
                     value={editForm.endDate}
                     onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     required
                   />
                 </div>
@@ -1243,11 +1243,11 @@ export function ClosedCompDetail() {
 
               {/* Timezone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Timezone</label>
                 <select
                   value={editForm.timezone}
                   onChange={(e) => setEditForm({ ...editForm, timezone: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
                   <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
                   <option value="Australia/Melbourne">Australia/Melbourne (AEST/AEDT)</option>
@@ -1260,11 +1260,11 @@ export function ClosedCompDetail() {
                 </select>
               </div>
 
-              <div className="border-t pt-4 flex justify-end gap-3">
+              <div className="border-t dark:border-gray-700 pt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                 >
                   Cancel
                 </button>

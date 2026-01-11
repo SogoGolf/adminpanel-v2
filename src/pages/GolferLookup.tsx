@@ -109,7 +109,7 @@ export function GolferLookup() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Golfer Lookup</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Golfer Lookup</h1>
 
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
@@ -118,7 +118,7 @@ export function GolferLookup() {
           onChange={(e) => setGolflinkNo(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Enter GolfLink number (e.g. 3021600123)"
-          className="flex-1 sm:max-w-sm border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 sm:max-w-sm border border-gray-300 dark:border-gray-600 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
         <button
           type="submit"
@@ -130,13 +130,13 @@ export function GolferLookup() {
       </form>
 
       {isError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded mb-4">
           Error searching for golfer: {(error as Error).message}
         </div>
       )}
 
       {searchTerm && !isLoading && !golfer && !isError && (
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded mb-4">
+        <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 px-4 py-3 rounded mb-4">
           No golfer found with GolfLink number: {searchTerm}
         </div>
       )}
@@ -144,21 +144,21 @@ export function GolferLookup() {
       {golfer && (
         <>
           {/* Golfer Summary Card */}
-          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
               <div>
-                <h2 className="text-xl font-semibold mb-4">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
                   {golfer.firstName} {golfer.lastName}
                 </h2>
                 <div className="grid grid-cols-[120px_1fr] sm:grid-cols-[140px_1fr] gap-2 text-sm">
-                  <span className="font-medium text-gray-600">Email:</span>
-                  <span className="break-all">{golfer.email}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Email:</span>
+                  <span className="break-all text-gray-900 dark:text-gray-100">{golfer.email}</span>
 
-                  <span className="font-medium text-gray-600">GolfLink #:</span>
-                  <span>{golfer.golflinkNo}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">GolfLink #:</span>
+                  <span className="text-gray-900 dark:text-gray-100">{golfer.golflinkNo}</span>
 
-                  <span className="font-medium text-gray-600">App Member Since:</span>
-                  <span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">App Member Since:</span>
+                  <span className="text-gray-900 dark:text-gray-100">
                     {golfer.memberSince
                       ? new Date(golfer.memberSince).toLocaleDateString('en-GB', {
                           day: '2-digit',
@@ -168,11 +168,11 @@ export function GolferLookup() {
                       : 'N/A'}
                   </span>
 
-                  <span className="font-medium text-gray-600">State:</span>
-                  <span>{golfer.state?.shortName ?? 'N/A'}</span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">State:</span>
+                  <span className="text-gray-900 dark:text-gray-100">{golfer.state?.shortName ?? 'N/A'}</span>
 
-                  <span className="font-medium text-gray-600">Gender:</span>
-                  <span>
+                  <span className="font-medium text-gray-600 dark:text-gray-400">Gender:</span>
+                  <span className="text-gray-900 dark:text-gray-100">
                     {golfer.gender === 'm' || golfer.gender === 'M'
                       ? 'Male'
                       : golfer.gender === 'f' || golfer.gender === 'F'
@@ -182,8 +182,8 @@ export function GolferLookup() {
                 </div>
               </div>
               <div className="text-left sm:text-right">
-                <p className="text-sm text-gray-500">Token Balance</p>
-                <p className="text-3xl font-bold text-green-600">
+                <p className="text-sm text-gray-500 dark:text-gray-400">Token Balance</p>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
                   {currentBalance === null ? '...' : currentBalance}
                 </p>
               </div>
@@ -201,23 +201,23 @@ export function GolferLookup() {
               </button>
             </div>
           )}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold">Transaction History</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Transaction History</h2>
             </div>
             {transactionsLoading ? (
-              <div className="text-center py-8 text-gray-500">Loading transactions...</div>
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">Loading transactions...</div>
             ) : (
               <TransactionTable transactions={transactions} />
             )}
           </div>
 
           {canViewRounds && (
-            <div className="bg-white rounded-lg shadow-md overflow-hidden mt-6">
-              <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Rounds History</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden mt-6">
+              <div className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Rounds History</h2>
               </div>
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 Coming soon
               </div>
             </div>

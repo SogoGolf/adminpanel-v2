@@ -5,6 +5,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { GolferLookup } from './pages/GolferLookup';
 import { Golfers } from './pages/Golfers';
@@ -16,6 +17,7 @@ import { ClosedComps } from './pages/ClosedComps';
 import { ClosedCompDetail } from './pages/ClosedCompDetail';
 import { AuditLog } from './pages/AuditLog';
 import { Login } from './pages/Login';
+import Settings from './pages/Settings';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import './index.css';
 
@@ -28,6 +30,7 @@ const allMenuItems = [
   { path: '/notifications', label: 'Notifications', feature: 'notifications' },
   { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
   { path: '/audit-log', label: 'Audit Log', superAdminOnly: true },
+  { path: '/settings', label: 'Settings', alwaysShow: true },
 ];
 
 const queryClient = new QueryClient({
@@ -54,6 +57,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
   // Filter menu items based on user's features and role
   const menuItems = allMenuItems.filter(item => {
+    if (item.alwaysShow) return true;
     if (item.superAdminOnly) {
       return isSuperAdmin();
     }
@@ -61,7 +65,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
@@ -142,10 +146,10 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white shadow-sm px-4 sm:px-6 py-4 flex items-center gap-4">
+        <header className="bg-white dark:bg-gray-800 shadow-sm px-4 sm:px-6 py-4 flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="lg:hidden p-2 -ml-2 hover:bg-gray-100 rounded"
+            className="lg:hidden p-2 -ml-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-gray-900 dark:text-gray-100"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -165,7 +169,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           ) : adminUser?.logoUrl ? (
             <img src={adminUser.logoUrl} alt={adminUser.name} className="h-10" />
           ) : null}
-          <h2 className={`text-2xl font-bold ${adminUser?.role === 'super_admin' ? 'text-red-700' : 'text-blue-700'}`}>
+          <h2 className={`text-2xl font-bold ${adminUser?.role === 'super_admin' ? 'text-red-700 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'}`}>
             {adminUser?.name || tenant.name}
           </h2>
         </header>
@@ -269,6 +273,16 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Settings />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
       {/* Redirect unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -277,18 +291,20 @@ function AppRoutes() {
 
 function App() {
   return (
-    <TenantProvider>
-      <PersistQueryClientProvider
-        client={queryClient}
-        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
-      >
-        <AuthProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </AuthProvider>
-      </PersistQueryClientProvider>
-    </TenantProvider>
+    <ThemeProvider>
+      <TenantProvider>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+        >
+          <AuthProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </AuthProvider>
+        </PersistQueryClientProvider>
+      </TenantProvider>
+    </ThemeProvider>
   );
 }
 
