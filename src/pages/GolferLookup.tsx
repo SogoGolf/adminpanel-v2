@@ -1,11 +1,69 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { golferService, transactionService } from '../services';
+import { v4 as uuidv4 } from 'uuid';
+import { cosmosDbClient } from '../api/cosmosdb';
 import { TransactionTable } from '../components/TransactionTable';
 import { AddTokensDialog } from '../components/AddTokensDialog';
 import { useFeature } from '../contexts/TenantContext';
 import { useAuth } from '../contexts/AuthContext';
+import type { Golfer, Transaction, TransactionType } from '../types';
+
+// CosmosDB-specific transaction service (inline to ensure CosmosDB usage)
+const cosmosTransactionService = {
+  async getForGolfer(golferId: string): Promise<Transaction[]> {
+    return cosmosDbClient.transactions.getForGolfer(golferId);
+  },
+
+  async getTypes(): Promise<TransactionType[]> {
+    return cosmosDbClient.transactions.getTypes();
+  },
+
+  async getAdminTypes(): Promise<TransactionType[]> {
+    const types = await cosmosDbClient.transactions.getTypes();
+    return types.filter(t => t.name === 'Admin Credit' || t.name === 'Admin Debit');
+  },
+
+  getCurrentBalance(transactions: Transaction[], golfer: Golfer): number {
+    if (transactions.length > 0) {
+      return transactions[0].availableTokens;
+    }
+    return golfer.tokenBalance ?? 0;
+  },
+
+  async addTransaction(
+    golfer: Golfer,
+    transactionType: TransactionType,
+    amount: number,
+    currentBalance: number
+  ): Promise<Transaction> {
+    const newBalance = transactionType.debitOrCredit === 'credit'
+      ? currentBalance + amount
+      : currentBalance - amount;
+
+    const transaction: Transaction = {
+      id: uuidv4(),
+      type: 'transaction',
+      golferId: golfer.id,
+      golferEmail: golfer.email,
+      golferFirstName: golfer.firstName,
+      golferLastName: golfer.lastName,
+      transactionDate: new Date().toISOString(),
+      transactionValue: amount,
+      availableTokens: newBalance,
+      transactionType: {
+        id: transactionType.id,
+        type: 'transactionType',
+        name: transactionType.name,
+        shortDescription: transactionType.shortDescription,
+        debitOrCredit: transactionType.debitOrCredit,
+      },
+      createdDate: new Date().toISOString(),
+    };
+
+    return cosmosDbClient.transactions.add(transaction);
+  },
+};
 
 export function GolferLookup() {
   const queryClient = useQueryClient();
@@ -13,7 +71,7 @@ export function GolferLookup() {
   const [golflinkNo, setGolflinkNo] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const { adminUser } = useAuth();
+  useAuth(); // Required for protected route
   const canAddTokens = useFeature('canAddTokens');
   const canViewRounds = useFeature('canViewRounds');
 
@@ -27,32 +85,32 @@ export function GolferLookup() {
     }
   }, []);
 
-  // Fetch golfer
+  // Fetch golfer from CosmosDB
   const {
     data: golfer,
     isLoading,
     isError,
     error,
   } = useQuery({
-    queryKey: ['golfer', searchTerm],
-    queryFn: () => golferService.getByGolflinkNo(searchTerm),
+    queryKey: ['cosmosdb-golfer', searchTerm],
+    queryFn: () => cosmosDbClient.golfers.getByGolflinkNo(searchTerm),
     enabled: !!searchTerm,
   });
 
-  // Fetch transactions
+  // Fetch transactions from CosmosDB
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
-    queryKey: ['transactions', golfer?.id],
-    queryFn: () => transactionService.getForGolfer(golfer!.id),
+    queryKey: ['cosmosdb-transactions', golfer?.id],
+    queryFn: () => cosmosTransactionService.getForGolfer(golfer!.id),
     enabled: !!golfer?.id,
   });
 
-  // Fetch transaction types (filtered to Admin Credit/Debit only)
+  // Fetch transaction types from CosmosDB (filtered to Admin Credit/Debit only)
   const { data: transactionTypes = [] } = useQuery({
-    queryKey: ['transactionTypes'],
-    queryFn: () => transactionService.getAdminTypes(),
+    queryKey: ['cosmosdb-transactionTypes'],
+    queryFn: () => cosmosTransactionService.getAdminTypes(),
   });
 
-  // Add transaction mutation
+  // Add transaction mutation (writes to CosmosDB)
   const addTransactionMutation = useMutation({
     mutationFn: async ({
       transactionTypeId,
@@ -70,25 +128,18 @@ export function GolferLookup() {
         throw new Error('Transaction type not found');
       }
 
-      // Pass admin user for audit logging
-      const performedBy = adminUser ? {
-        id: adminUser.id,
-        email: adminUser.email,
-        name: adminUser.name,
-      } : undefined;
-
-      return transactionService.addTransaction(golfer, transactionType, amount, currentBalance, performedBy);
+      return cosmosTransactionService.addTransaction(golfer, transactionType, amount, currentBalance);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['transactions', golfer?.id] });
+      queryClient.invalidateQueries({ queryKey: ['cosmosdb-transactions', golfer?.id] });
       setDialogOpen(false);
     },
   });
 
-  // Get balance using service
+  // Get balance using CosmosDB transaction service
   const currentBalance = transactionsLoading || !golfer
     ? null
-    : transactionService.getCurrentBalance(transactions, golfer);
+    : cosmosTransactionService.getCurrentBalance(transactions, golfer);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +160,25 @@ export function GolferLookup() {
 
   return (
     <div>
+      {/* CosmosDB Banner - clearly indicates this page operates on CosmosDB */}
+      <div className="mb-6 p-4 bg-purple-100 dark:bg-purple-900/50 border-2 border-purple-500 dark:border-purple-400 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <svg className="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-purple-800 dark:text-purple-200">
+              Azure CosmosDB
+            </h2>
+            <p className="text-sm text-purple-700 dark:text-purple-300">
+              This page reads and writes golfer data and transactions directly to CosmosDB
+            </p>
+          </div>
+        </div>
+      </div>
+
       <h1 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Golfer Lookup</h1>
 
       <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 mb-6">

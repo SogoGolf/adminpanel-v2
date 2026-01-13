@@ -1,12 +1,18 @@
-import { v4 as uuidv4 } from 'uuid';
-import { cosmosDbClient } from '../api/cosmosdb';
+import { getAuditLogs, createAuditLog } from '../api/mongodb';
 import type { AuditLog, AuditAction, Golfer, PaginatedResponse } from '../types';
-import type { GetAuditLogsParams } from '../api/interfaces';
 
 interface PerformedBy {
   id: string;
   email: string;
   name: string;
+}
+
+interface GetAuditLogsParams {
+  page?: number;
+  pageSize?: number;
+  action?: AuditAction;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export const auditService = {
@@ -65,23 +71,44 @@ export const auditService = {
     target: AuditLog['target'],
     details: Record<string, unknown>
   ): Promise<AuditLog> {
-    const auditLog: AuditLog = {
-      id: uuidv4(),
-      type: 'auditLog',
+    const result = await createAuditLog({
       action,
-      performedBy,
-      target,
+      performedBy: {
+        id: performedBy.id,
+        email: performedBy.email,
+        name: performedBy.name,
+      },
+      target: target ? {
+        type: target.type,
+        id: target.id,
+        name: target.name,
+        email: target.email,
+      } : undefined,
       details,
-      timestamp: new Date().toISOString(),
-    };
+    });
 
-    return cosmosDbClient.auditLogs.add(auditLog);
+    // Map the MongoDB response to match the expected AuditLog type
+    return {
+      id: result.id,
+      type: 'auditLog',
+      action: result.action as AuditAction,
+      performedBy: result.performedBy,
+      target: result.target,
+      details: result.details,
+      timestamp: result.timestamp,
+    };
   },
 
   /**
    * Get all audit logs with optional filtering and pagination.
    */
   async getAll(params?: GetAuditLogsParams): Promise<PaginatedResponse<AuditLog>> {
-    return cosmosDbClient.auditLogs.getAll(params);
+    return getAuditLogs({
+      page: params?.page,
+      pageSize: params?.pageSize,
+      action: params?.action,
+      fromDate: params?.fromDate,
+      toDate: params?.toDate,
+    });
   },
 };

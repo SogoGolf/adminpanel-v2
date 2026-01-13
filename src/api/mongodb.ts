@@ -395,3 +395,39 @@ export async function inviteParticipant(compId: string, golferId: string): Promi
   const response = await api.post<ClosedCompParticipant>(`/closedcomps/${compId}/participants`, { golferId });
   return response.data;
 }
+
+// Audit Log API functions
+export interface CreateAuditLogParams {
+  action: string;
+  performedBy: {
+    id?: string;
+    email: string;
+    name?: string;
+  };
+  target?: {
+    type?: string;
+    id?: string;
+    name?: string;
+    email?: string;
+  };
+  details?: Record<string, unknown>;
+}
+
+export async function getAuditLogs(params: GetAuditLogsParams = {}): Promise<PaginatedResponse<AuditLog>> {
+  const { page = 1, pageSize = 20, action, fromDate, toDate } = params;
+  const response = await api.get<PaginatedResponse<AuditLog>>('/auditlogs', {
+    params: {
+      page,
+      pageSize,
+      action: action || undefined,
+      fromDate: fromDate || undefined,
+      toDate: toDate || undefined,
+    },
+  });
+  return response.data;
+}
+
+export async function createAuditLog(params: CreateAuditLogParams): Promise<AuditLog> {
+  const response = await api.post<AuditLog>('/auditlogs', params);
+  return response.data;
+}
