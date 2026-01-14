@@ -165,7 +165,7 @@ export function ClosedCompDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<TabType>('info');
+  const [activeTab, setActiveTab] = useState<TabType>('leaderboard');
   const [showCloseDialog, setShowCloseDialog] = useState(false);
   const [showReopenDialog, setShowReopenDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -476,10 +476,10 @@ export function ClosedCompDetail() {
   }
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
-    { key: 'info', label: 'Info' },
+    { key: 'leaderboard', label: 'Leaderboard' },
     { key: 'participants', label: 'Participants', count: participants.length },
     { key: 'rounds', label: 'Rounds', count: rounds.length },
-    { key: 'leaderboard', label: 'Leaderboard' },
+    { key: 'info', label: 'Info' },
   ];
 
   return (
