@@ -207,6 +207,11 @@ function isToday(dateString?: string | null): boolean {
   );
 }
 
+function formatRoundValue(value?: string | null): string {
+  if (!value) return '-';
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
 // Expandable row content that fetches round details
 function ExpandedRoundDetails({ roundId }: { roundId: string }) {
   const { data: round, isLoading, isError } = useQuery({
@@ -351,21 +356,13 @@ function RoundCard({
 
       {/* Stats row */}
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {round.roundType && (
-          <span className="text-gray-500 dark:text-gray-400">
-            Type: <span className="text-gray-900 dark:text-gray-100">{round.roundType.charAt(0).toUpperCase() + round.roundType.slice(1).toLowerCase()}</span>
-          </span>
-        )}
         {round.compType && (
           <span className="text-gray-500 dark:text-gray-400">
-            Comp: <span className="text-gray-900 dark:text-gray-100">{round.compType.charAt(0).toUpperCase() + round.compType.slice(1).toLowerCase()}</span>
+            Type: <span className="text-gray-900 dark:text-gray-100">{formatRoundValue(round.compType)}</span>
           </span>
         )}
         <span className="text-gray-500 dark:text-gray-400">
           HCP: <span className="text-gray-900 dark:text-gray-100">{round.dailyHandicap?.toFixed(1) ?? '-'}</span>
-        </span>
-        <span className="text-gray-500 dark:text-gray-400">
-          Score: <span className="text-gray-900 dark:text-gray-100">{round.compScoreTotal ?? '-'}</span>
         </span>
         <span className="text-gray-500 dark:text-gray-400">
           Holes: <span className="text-gray-900 dark:text-gray-100">{round.holeCount || 0}</span>
@@ -383,13 +380,31 @@ function RoundCard({
 }
 
 const STORAGE_KEY = 'rounds-filters';
+const persistedFilterIds = new Set([
+  'roundDate',
+  'golferName',
+  'golflinkNo',
+  'clubName',
+  'state',
+  'compType',
+  'isSubmitted',
+]);
 
 function getInitialFilters(): ColumnFiltersState {
   try {
     const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return parsed.filters || [];
+      if (Array.isArray(parsed.filters)) {
+        return parsed.filters.filter(
+          (filter: unknown): filter is ColumnFilter =>
+            typeof filter === 'object' &&
+            filter !== null &&
+            'id' in filter &&
+            typeof filter.id === 'string' &&
+            persistedFilterIds.has(filter.id)
+        );
+      }
     }
   } catch {
     // Ignore parse errors
@@ -425,7 +440,6 @@ export function Rounds() {
     golferName: useRef<HTMLInputElement>(null),
     golflinkNo: useRef<HTMLInputElement>(null),
     clubName: useRef<HTMLInputElement>(null),
-    roundType: useRef<HTMLInputElement>(null),
     compType: useRef<HTMLInputElement>(null),
   };
 
@@ -454,7 +468,6 @@ export function Rounds() {
       clubName: filterParams.clubName,
       state: filterParams.state,
       compType: filterParams.compType,
-      roundType: filterParams.roundType,
       isSubmitted: filterParams.isSubmitted === 'true' ? true : filterParams.isSubmitted === 'false' ? false : undefined,
       roundDate: filterParams.roundDate,
       clubIds,
@@ -647,30 +660,16 @@ export function Rounds() {
         header: 'State',
         cell: (info) => info.getValue()?.toUpperCase() || '-',
       }),
-      columnHelper.accessor('roundType', {
+      columnHelper.accessor('compType', {
         header: 'Type',
         cell: (info) => {
           const value = info.getValue();
-          return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : '-';
-        },
-      }),
-      columnHelper.accessor('compType', {
-        header: 'Comp',
-        cell: (info) => {
-          const value = info.getValue();
-          return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : '-';
+          return formatRoundValue(value);
         },
       }),
       columnHelper.accessor('dailyHandicap', {
         header: 'HCP',
         cell: (info) => formatHandicap(info.getValue()),
-      }),
-      columnHelper.accessor('compScoreTotal', {
-        header: 'Score',
-        cell: (info) => {
-          const score = info.getValue();
-          return score !== null && score !== undefined ? score : '-';
-        },
       }),
       columnHelper.accessor('holeCount', {
         header: 'Holes',
@@ -944,15 +943,6 @@ export function Rounds() {
                     </th>
                     <th className="px-4 py-2">
                       <ColumnFilter
-                        columnId="roundType"
-                        value={getFilterValue('roundType')}
-                        onChange={(v) => handleFilterChange('roundType', v)}
-                        placeholder="Filter..."
-                        inputRef={filterRefs.roundType}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
                         columnId="compType"
                         value={getFilterValue('compType')}
                         onChange={(v) => handleFilterChange('compType', v)}
@@ -962,9 +952,6 @@ export function Rounds() {
                     </th>
                     <th className="px-4 py-2">
                       {/* No filter for HCP */}
-                    </th>
-                    <th className="px-4 py-2">
-                      {/* No filter for score */}
                     </th>
                     <th className="px-4 py-2">
                       {/* No filter for holes */}
