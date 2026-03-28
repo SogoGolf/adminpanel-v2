@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard, AuditLog } from '../types';
+import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard, AuditLog, ScoreType } from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository, IAuditLogRepository, GetAuditLogsParams } from './interfaces';
 
 const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
@@ -136,6 +136,11 @@ export async function getClubs(): Promise<Club[]> {
   return response.data;
 }
 
+export async function getScoreTypes(): Promise<ScoreType[]> {
+  const response = await api.get<ScoreType[]>('/scoreTypes');
+  return response.data;
+}
+
 export interface GetAllRoundsParams {
   page?: number;
   pageSize?: number;
@@ -147,6 +152,16 @@ export interface GetAllRoundsParams {
   roundType?: string;
   isSubmitted?: boolean;
   roundDate?: string;
+  roundDateFrom?: string;
+  roundDateTo?: string;
+  startTimeFrom?: string;
+  startTimeTo?: string;
+  handicapMin?: number;
+  handicapMax?: number;
+  holeCountMin?: number;
+  holeCountMax?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
   clubIds?: string[]; // For multi-tenant filtering
 }
 
@@ -157,7 +172,30 @@ export interface RoundsCountResponse {
 }
 
 export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<RoundsPaginatedResponse> {
-  const { page = 1, pageSize = 20, golferName, golflinkNo, clubName, state, compType, roundType, isSubmitted, roundDate, clubIds } = params;
+  const {
+    page = 1,
+    pageSize = 20,
+    golferName,
+    golflinkNo,
+    clubName,
+    state,
+    compType,
+    roundType,
+    isSubmitted,
+    roundDate,
+    roundDateFrom,
+    roundDateTo,
+    startTimeFrom,
+    startTimeTo,
+    handicapMin,
+    handicapMax,
+    holeCountMin,
+    holeCountMax,
+    sortBy,
+    sortDirection,
+    clubIds,
+  } = params;
+
   const response = await api.get<RoundsPaginatedResponse>('/rounds/search', {
     params: {
       page,
@@ -170,6 +208,16 @@ export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<Rou
       roundType: roundType || undefined,
       isSubmitted: isSubmitted !== undefined ? isSubmitted : undefined,
       roundDate: roundDate || undefined,
+      roundDateFrom: roundDateFrom || undefined,
+      roundDateTo: roundDateTo || undefined,
+      startTimeFrom: startTimeFrom || undefined,
+      startTimeTo: startTimeTo || undefined,
+      handicapMin: handicapMin !== undefined ? handicapMin : undefined,
+      handicapMax: handicapMax !== undefined ? handicapMax : undefined,
+      holeCountMin: holeCountMin !== undefined ? holeCountMin : undefined,
+      holeCountMax: holeCountMax !== undefined ? holeCountMax : undefined,
+      sortBy: sortBy || undefined,
+      sortDirection: sortDirection || undefined,
       clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
     },
   });

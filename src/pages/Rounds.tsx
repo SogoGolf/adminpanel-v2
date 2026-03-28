@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
@@ -6,13 +6,41 @@ import {
   getCoreRowModel,
   flexRender,
   createColumnHelper,
+  type Column,
+  type SortingState,
 } from '@tanstack/react-table';
-import { getAllRounds, getRoundById, getRoundsCounts } from '../api/mongodb';
+import { getAllRounds, getRoundById, getRoundsCounts, getScoreTypes } from '../api/mongodb';
 import { useAuth } from '../contexts/AuthContext';
 import type { RoundSummary, HoleScore } from '../types';
 
-type ColumnFilter = { id: string; value: unknown };
-type ColumnFiltersState = ColumnFilter[];
+type HoleRangeValue = '' | '1-9' | '10-18' | '18';
+type RoundSortField =
+  | 'roundDate'
+  | 'startTime'
+  | 'golferName'
+  | 'golflinkNo'
+  | 'clubName'
+  | 'state'
+  | 'compType'
+  | 'dailyHandicap'
+  | 'holeCount'
+  | 'isSubmitted';
+
+type RoundsFilterState = {
+  roundDateFrom: string;
+  roundDateTo: string;
+  startTimeFrom: string;
+  startTimeTo: string;
+  golferName: string;
+  golflinkNo: string;
+  clubName: string;
+  state: string;
+  compType: string;
+  handicapMin: string;
+  handicapMax: string;
+  holeRange: HoleRangeValue;
+  isSubmitted: string;
+};
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -40,67 +68,71 @@ const submittedOptions = [
   { value: 'false', label: 'No' },
 ];
 
-function ColumnFilter({
-  columnId,
-  value,
-  onChange,
-  placeholder,
-  type = 'text',
-  options,
-  inputRef,
-}: {
-  columnId: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  type?: 'text' | 'select';
-  options?: { value: string; label: string }[] | string[];
-  inputRef?: React.RefObject<HTMLInputElement | null>;
-}) {
-  if (type === 'select' && options) {
-    const normalizedOptions = options.map((opt) =>
-      typeof opt === 'string' ? { value: opt, label: opt } : opt
-    );
-    return (
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-      >
-        {normalizedOptions[0]?.value !== '' && <option value="">All</option>}
-        {normalizedOptions.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-    );
-  }
+const holeRangeOptions: { value: HoleRangeValue; label: string }[] = [
+  { value: '', label: 'All' },
+  { value: '1-9', label: '1-9 holes' },
+  { value: '10-18', label: '10-18 holes' },
+  { value: '18', label: '18 holes' },
+];
 
-  return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        data-filter-id={columnId}
-        className="w-full px-2 py-1 pr-6 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-      />
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange('')}
-          className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-      )}
-    </div>
-  );
+const DEFAULT_FILTERS: RoundsFilterState = {
+  roundDateFrom: '',
+  roundDateTo: '',
+  startTimeFrom: '',
+  startTimeTo: '',
+  golferName: '',
+  golflinkNo: '',
+  clubName: '',
+  state: '',
+  compType: '',
+  handicapMin: '',
+  handicapMax: '',
+  holeRange: '',
+  isSubmitted: '',
+};
+
+const ADVANCED_FILTER_KEYS: Array<keyof RoundsFilterState> = [
+  'startTimeFrom',
+  'startTimeTo',
+  'clubName',
+  'state',
+  'compType',
+  'handicapMin',
+  'handicapMax',
+  'holeRange',
+  'isSubmitted',
+];
+
+const SORTABLE_COLUMN_IDS: RoundSortField[] = [
+  'roundDate',
+  'startTime',
+  'golferName',
+  'golflinkNo',
+  'clubName',
+  'state',
+  'compType',
+  'dailyHandicap',
+  'holeCount',
+  'isSubmitted',
+];
+
+const DEFAULT_SORTING: SortingState = [{ id: 'startTime', desc: true }];
+const STORAGE_KEY = 'rounds-view-state-v2';
+const FILTER_INPUT_CLASSES =
+  'w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400';
+const FILTER_LABEL_CLASSES = 'mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400';
+
+function getHoleRangeBounds(holeRange: HoleRangeValue): { min?: number; max?: number } {
+  switch (holeRange) {
+    case '1-9':
+      return { min: 1, max: 9 };
+    case '10-18':
+      return { min: 10, max: 18 };
+    case '18':
+      return { min: 18, max: 18 };
+    default:
+      return {};
+  }
 }
 
 // Scorecard table component for displaying hole-by-hole scores
@@ -210,6 +242,156 @@ function isToday(dateString?: string | null): boolean {
 function formatRoundValue(value?: string | null): string {
   if (!value) return '-';
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function parseOptionalNumber(value: string): number | undefined {
+  if (!value.trim()) return undefined;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function getTodayDateValue(): string {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateInputValue(value: string): Date | null {
+  if (!value) return null;
+
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+
+  return new Date(year, month - 1, day);
+}
+
+function formatDateInputValue(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function isRoundSortField(value: string): value is RoundSortField {
+  return SORTABLE_COLUMN_IDS.includes(value as RoundSortField);
+}
+
+function getInitialViewState(): { filters: RoundsFilterState; sorting: SortingState } {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return { filters: DEFAULT_FILTERS, sorting: DEFAULT_SORTING };
+    }
+
+    const parsed = JSON.parse(stored) as {
+      filters?: Partial<Record<keyof RoundsFilterState, unknown>>;
+      sorting?: unknown;
+    };
+
+    const filters: RoundsFilterState = { ...DEFAULT_FILTERS };
+
+    for (const key of Object.keys(DEFAULT_FILTERS) as Array<keyof RoundsFilterState>) {
+      const value = parsed.filters?.[key];
+      if (typeof value !== 'string') continue;
+
+      if (key === 'holeRange') {
+        const holeRangeValue = holeRangeOptions.some((option) => option.value === value)
+          ? (value as HoleRangeValue)
+          : '';
+        filters[key] = holeRangeValue;
+        continue;
+      }
+
+      filters[key] = value;
+    }
+
+    const sorting = Array.isArray(parsed.sorting)
+      ? parsed.sorting
+          .filter(
+            (sort): sort is SortingState[number] =>
+              typeof sort === 'object' &&
+              sort !== null &&
+              'id' in sort &&
+              typeof sort.id === 'string' &&
+              isRoundSortField(sort.id) &&
+              'desc' in sort &&
+              typeof sort.desc === 'boolean'
+          )
+          .slice(0, 1)
+      : [];
+
+    return {
+      filters,
+      sorting: sorting.length > 0 ? sorting : DEFAULT_SORTING,
+    };
+  } catch {
+    return { filters: DEFAULT_FILTERS, sorting: DEFAULT_SORTING };
+  }
+}
+
+function FilterField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className={FILTER_LABEL_CLASSES}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function SortIndicator({ direction }: { direction: false | 'asc' | 'desc' }) {
+  const upClass =
+    direction === 'asc'
+      ? 'text-blue-600 dark:text-blue-400'
+      : 'text-gray-400 dark:text-gray-500';
+  const downClass =
+    direction === 'desc'
+      ? 'text-blue-600 dark:text-blue-400'
+      : 'text-gray-400 dark:text-gray-500';
+
+  return (
+    <span className="inline-flex flex-col leading-none">
+      <svg className={`h-2.5 w-2.5 ${upClass}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5l-5 5m5-5l5 5m-5-5v14" />
+      </svg>
+      <svg className={`-mt-0.5 h-2.5 w-2.5 ${downClass}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l5-5m-5 5l-5-5m5 5V5" />
+      </svg>
+    </span>
+  );
+}
+
+function SortableHeader({
+  column,
+  label,
+}: {
+  column: Column<RoundSummary, unknown>;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={column.getToggleSortingHandler()}
+      className="flex items-center gap-2 text-left hover:text-gray-700 dark:hover:text-gray-100"
+    >
+      <span>{label}</span>
+      <SortIndicator direction={column.getIsSorted()} />
+    </button>
+  );
 }
 
 // Expandable row content that fetches round details
@@ -379,46 +561,16 @@ function RoundCard({
   );
 }
 
-const STORAGE_KEY = 'rounds-filters';
-const persistedFilterIds = new Set([
-  'roundDate',
-  'golferName',
-  'golflinkNo',
-  'clubName',
-  'state',
-  'compType',
-  'isSubmitted',
-]);
-
-function getInitialFilters(): ColumnFiltersState {
-  try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed.filters)) {
-        return parsed.filters.filter(
-          (filter: unknown): filter is ColumnFilter =>
-            typeof filter === 'object' &&
-            filter !== null &&
-            'id' in filter &&
-            typeof filter.id === 'string' &&
-            persistedFilterIds.has(filter.id)
-        );
-      }
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return [];
-}
-
 export function Rounds() {
   const { adminUser } = useAuth();
   const queryClient = useQueryClient();
   const pageSize = 20;
+  const [initialViewState] = useState(getInitialViewState);
 
   const [page, setPage] = useState(1);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(getInitialFilters);
+  const [filters, setFilters] = useState<RoundsFilterState>(initialViewState.filters);
+  const [sorting, setSorting] = useState<SortingState>(initialViewState.sorting);
+  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [knownCounts, setKnownCounts] = useState<{ inProgress: number; submitted: number } | null>(null);
   const [newRoundsAvailable, setNewRoundsAvailable] = useState(false);
@@ -435,41 +587,55 @@ export function Rounds() {
     });
   };
 
-  const focusedFilterRef = useRef<string | null>(null);
-  const filterRefs = {
-    golferName: useRef<HTMLInputElement>(null),
-    golflinkNo: useRef<HTMLInputElement>(null),
-    clubName: useRef<HTMLInputElement>(null),
-    compType: useRef<HTMLInputElement>(null),
-  };
+  const debouncedFilters = useDebounce(filters, 500);
+  const activeSort = sorting[0] ?? DEFAULT_SORTING[0];
+  const todayDateValue = useMemo(() => getTodayDateValue(), []);
+  const scoreTypeFallbacks = useMemo(() => ['stableford', 'stroke', 'par'], []);
+  const { data: scoreTypes } = useQuery({
+    queryKey: ['scoreTypes'],
+    queryFn: getScoreTypes,
+    staleTime: 1000 * 60 * 60,
+  });
+  const scoreTypeOptions = useMemo(() => {
+    const values = (scoreTypes ?? [])
+      .map((scoreType) => scoreType.name?.trim())
+      .filter((value): value is string => Boolean(value));
 
-  const debouncedFilters = useDebounce(columnFilters, 700);
+    const uniqueValues = values.length > 0 ? values : scoreTypeFallbacks;
+    return Array.from(new Set(uniqueValues)).sort((left, right) => left.localeCompare(right));
+  }, [scoreTypeFallbacks, scoreTypes]);
 
-  const filterParams = useMemo(() => {
-    const params: Record<string, string> = {};
-    debouncedFilters.forEach((filter) => {
-      if (filter.value) {
-        params[filter.id] = filter.value as string;
-      }
-    });
-    return params;
-  }, [debouncedFilters]);
+  const holeBounds = useMemo(() => getHoleRangeBounds(debouncedFilters.holeRange), [debouncedFilters.holeRange]);
 
   // Get clubIds from admin user for multi-tenant filtering
   const clubIds = adminUser?.clubIds;
 
   const { data, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ['rounds', page, pageSize, filterParams, clubIds],
+    queryKey: ['rounds', page, pageSize, debouncedFilters, activeSort, clubIds],
     queryFn: () => getAllRounds({
       page,
       pageSize,
-      golferName: filterParams.golferName,
-      golflinkNo: filterParams.golflinkNo,
-      clubName: filterParams.clubName,
-      state: filterParams.state,
-      compType: filterParams.compType,
-      isSubmitted: filterParams.isSubmitted === 'true' ? true : filterParams.isSubmitted === 'false' ? false : undefined,
-      roundDate: filterParams.roundDate,
+      roundDateFrom: debouncedFilters.roundDateFrom || undefined,
+      roundDateTo: debouncedFilters.roundDateTo || undefined,
+      startTimeFrom: debouncedFilters.startTimeFrom || undefined,
+      startTimeTo: debouncedFilters.startTimeTo || undefined,
+      golferName: debouncedFilters.golferName || undefined,
+      golflinkNo: debouncedFilters.golflinkNo || undefined,
+      clubName: debouncedFilters.clubName || undefined,
+      state: debouncedFilters.state || undefined,
+      compType: debouncedFilters.compType || undefined,
+      handicapMin: parseOptionalNumber(debouncedFilters.handicapMin),
+      handicapMax: parseOptionalNumber(debouncedFilters.handicapMax),
+      holeCountMin: holeBounds.min,
+      holeCountMax: holeBounds.max,
+      isSubmitted:
+        debouncedFilters.isSubmitted === 'true'
+          ? true
+          : debouncedFilters.isSubmitted === 'false'
+            ? false
+            : undefined,
+      sortBy: activeSort?.id,
+      sortDirection: activeSort?.desc ? 'desc' : 'asc',
       clubIds,
     }),
     placeholderData: keepPreviousData,
@@ -521,43 +687,36 @@ export function Rounds() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedFilters]);
+  }, [debouncedFilters, sorting]);
 
   useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters: columnFilters }));
-  }, [columnFilters]);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters, sorting }));
+  }, [filters, sorting]);
 
-  useEffect(() => {
-    if (focusedFilterRef.current && filterRefs[focusedFilterRef.current as keyof typeof filterRefs]) {
-      const input = filterRefs[focusedFilterRef.current as keyof typeof filterRefs].current;
-      if (input) {
-        input.focus();
-        const len = input.value.length;
-        input.setSelectionRange(len, len);
-      }
-    }
-  }, [data]);
-
-  const handleFilterChange = (columnId: string, value: string) => {
-    focusedFilterRef.current = columnId;
-    setColumnFilters((prev) => {
-      const existing = prev.filter((f) => f.id !== columnId);
-      if (value) {
-        return [...existing, { id: columnId, value }];
-      }
-      return existing;
-    });
+  const handleFilterChange = <K extends keyof RoundsFilterState>(key: K, value: RoundsFilterState[K]) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const getFilterValue = (columnId: string): string => {
-    const filter = columnFilters.find((f) => f.id === columnId);
-    return (filter?.value as string) || '';
+  const shiftRoundDateRange = (days: number) => {
+    const fallbackDate = parseDateInputValue(todayDateValue) ?? new Date();
+    const currentFrom = parseDateInputValue(filters.roundDateFrom);
+    const currentTo = parseDateInputValue(filters.roundDateTo);
+
+    let startDate = currentFrom ?? currentTo ?? fallbackDate;
+    let endDate = currentTo ?? currentFrom ?? fallbackDate;
+
+    if (startDate > endDate) {
+      [startDate, endDate] = [endDate, startDate];
+    }
+
+    handleFilterChange('roundDateFrom', formatDateInputValue(addDays(startDate, days)));
+    handleFilterChange('roundDateTo', formatDateInputValue(addDays(endDate, days)));
   };
 
   const clearAllFilters = () => {
-    setColumnFilters([]);
+    setFilters(DEFAULT_FILTERS);
+    setIsAdvancedFiltersOpen(false);
     setPage(1);
-    sessionStorage.removeItem(STORAGE_KEY);
   };
 
   const formatDate = (dateString?: string | null) => {
@@ -579,6 +738,7 @@ export function Rounds() {
       columnHelper.display({
         id: 'actions',
         header: '',
+        enableSorting: false,
         cell: (info) => (
           <button
             onClick={() => toggleRow(info.row.original.id)}
@@ -590,10 +750,12 @@ export function Rounds() {
       }),
       columnHelper.accessor('roundDate', {
         header: 'Date',
+        enableSorting: true,
         cell: (info) => formatDate(info.getValue()),
       }),
       columnHelper.accessor('startTime', {
         header: 'Start Time',
+        enableSorting: true,
         cell: (info) => {
           const value = info.getValue();
           if (!value) return '-';
@@ -607,6 +769,7 @@ export function Rounds() {
       columnHelper.accessor((row) => `${row.golferFirstName || ''} ${row.golferLastName || ''}`.trim(), {
         id: 'golferName',
         header: 'Golfer',
+        enableSorting: true,
         cell: (info) => {
           const row = info.row.original;
           const name = info.getValue() || '-';
@@ -647,21 +810,25 @@ export function Rounds() {
       }),
       columnHelper.accessor('golflinkNo', {
         header: 'GA Number',
+        enableSorting: true,
         cell: (info) => (
           <span className="font-mono">{info.getValue() || '-'}</span>
         ),
       }),
       columnHelper.accessor('clubName', {
         header: 'Club',
+        enableSorting: true,
         cell: (info) => info.getValue() || '-',
       }),
       columnHelper.accessor('clubState', {
         id: 'state',
         header: 'State',
+        enableSorting: true,
         cell: (info) => info.getValue()?.toUpperCase() || '-',
       }),
       columnHelper.accessor('compType', {
         header: 'Type',
+        enableSorting: true,
         cell: (info) => {
           const value = info.getValue();
           return formatRoundValue(value);
@@ -669,14 +836,17 @@ export function Rounds() {
       }),
       columnHelper.accessor('dailyHandicap', {
         header: 'HCP',
+        enableSorting: true,
         cell: (info) => formatHandicap(info.getValue()),
       }),
       columnHelper.accessor('holeCount', {
         header: 'Holes',
+        enableSorting: true,
         cell: (info) => info.getValue() || 0,
       }),
       columnHelper.accessor('isSubmitted', {
         header: 'Submitted',
+        enableSorting: true,
         cell: (info) => {
           const submitted = info.getValue();
           return (
@@ -698,15 +868,24 @@ export function Rounds() {
     data: data?.data ?? [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-    manualFiltering: true,
     manualPagination: true,
+    manualSorting: true,
+    enableMultiSort: false,
+    enableSortingRemoval: true,
     state: {
-      columnFilters,
+      sorting,
     },
-    onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
   });
 
-  const hasActiveFilters = columnFilters.length > 0;
+  const hasActiveFilters = Object.values(filters).some((value) => value !== '');
+  const advancedFiltersActiveCount = ADVANCED_FILTER_KEYS.reduce(
+    (count, key) => count + (filters[key] !== '' ? 1 : 0),
+    0
+  );
+  const isTodayQuickFilterActive =
+    filters.roundDateFrom === todayDateValue && filters.roundDateTo === todayDateValue;
+  const hasRoundDateFilter = filters.roundDateFrom !== '' || filters.roundDateTo !== '';
 
   return (
     <div className="space-y-4">
@@ -720,14 +899,6 @@ export function Rounds() {
             </div>
           )}
         </div>
-        {hasActiveFilters && (
-          <button
-            onClick={clearAllFilters}
-            className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          >
-            Clear All Filters
-          </button>
-        )}
       </div>
 
       {/* New rounds notification */}
@@ -761,6 +932,267 @@ export function Rounds() {
         </div>
       )}
 
+      <div className="rounded-lg bg-white p-4 shadow dark:bg-gray-800">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Filters</h2>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div>
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className={FILTER_LABEL_CLASSES}>Round Date</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => shiftRoundDateRange(-1)}
+                  className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                >
+                  -1 day
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFilterChange('roundDateFrom', todayDateValue);
+                    handleFilterChange('roundDateTo', todayDateValue);
+                  }}
+                  className={`rounded-full px-3 py-0.5 text-xs font-semibold transition-colors ${
+                    isTodayQuickFilterActive
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60'
+                  }`}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => shiftRoundDateRange(1)}
+                  className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                >
+                  +1 day
+                </button>
+                {hasRoundDateFilter && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleFilterChange('roundDateFrom', '');
+                      handleFilterChange('roundDateTo', '');
+                    }}
+                    className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={filters.roundDateFrom}
+                onChange={(event) => handleFilterChange('roundDateFrom', event.target.value)}
+                className={FILTER_INPUT_CLASSES}
+              />
+              <input
+                type="date"
+                value={filters.roundDateTo}
+                onChange={(event) => handleFilterChange('roundDateTo', event.target.value)}
+                className={FILTER_INPUT_CLASSES}
+              />
+            </div>
+          </div>
+
+          <div>
+            <FilterField label="Golfer Name">
+              <input
+                type="text"
+                value={filters.golferName}
+                onChange={(event) => handleFilterChange('golferName', event.target.value)}
+                placeholder="Search golfer"
+                className={FILTER_INPUT_CLASSES}
+              />
+            </FilterField>
+          </div>
+
+          <div>
+            <FilterField label="GA Number">
+              <input
+                type="text"
+                value={filters.golflinkNo}
+                onChange={(event) => handleFilterChange('golflinkNo', event.target.value)}
+                placeholder="Search GA number"
+                className={FILTER_INPUT_CLASSES}
+              />
+            </FilterField>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          <button
+            type="button"
+            aria-expanded={isAdvancedFiltersOpen}
+            aria-controls="rounds-advanced-filters"
+            onClick={() => setIsAdvancedFiltersOpen((open) => !open)}
+            className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700/60 dark:hover:bg-gray-700"
+          >
+            <div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                {isAdvancedFiltersOpen ? 'Hide More Filters' : 'Show More Filters'}
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400">
+                Start time, club, state, type, handicap, holes and submitted status
+              </div>
+            </div>
+
+            <div className="ml-4 flex items-center gap-3">
+              {advancedFiltersActiveCount > 0 && (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                  {advancedFiltersActiveCount} active
+                </span>
+              )}
+              <svg
+                className={`h-5 w-5 text-gray-500 transition-transform duration-300 dark:text-gray-300 ${
+                  isAdvancedFiltersOpen ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </button>
+
+          {hasActiveFilters && (
+            <button
+              onClick={clearAllFilters}
+              className="inline-flex items-center justify-center rounded-md bg-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        <div
+          id="rounds-advanced-filters"
+          className={`grid transition-all duration-300 ease-in-out ${
+            isAdvancedFiltersOpen ? 'mt-4 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="grid grid-cols-1 gap-4 pt-1 md:grid-cols-2 xl:grid-cols-4">
+              <FilterField label="Start Time">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="time"
+                    value={filters.startTimeFrom}
+                    onChange={(event) => handleFilterChange('startTimeFrom', event.target.value)}
+                    className={FILTER_INPUT_CLASSES}
+                  />
+                  <input
+                    type="time"
+                    value={filters.startTimeTo}
+                    onChange={(event) => handleFilterChange('startTimeTo', event.target.value)}
+                    className={FILTER_INPUT_CLASSES}
+                  />
+                </div>
+              </FilterField>
+
+              <FilterField label="Club Name">
+                <input
+                  type="text"
+                  value={filters.clubName}
+                  onChange={(event) => handleFilterChange('clubName', event.target.value)}
+                  placeholder="Search club"
+                  className={FILTER_INPUT_CLASSES}
+                />
+              </FilterField>
+
+              <FilterField label="State">
+                <select
+                  value={filters.state}
+                  onChange={(event) => handleFilterChange('state', event.target.value)}
+                  className={FILTER_INPUT_CLASSES}
+                >
+                  <option value="">All states</option>
+                  {stateOptions.map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <FilterField label="Type">
+                <select
+                  value={filters.compType}
+                  onChange={(event) => handleFilterChange('compType', event.target.value)}
+                  className={FILTER_INPUT_CLASSES}
+                >
+                  <option value="">All types</option>
+                  {scoreTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {formatRoundValue(type)}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <FilterField label="Handicap">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    value={filters.handicapMin}
+                    onChange={(event) => handleFilterChange('handicapMin', event.target.value)}
+                    placeholder="Min"
+                    className={FILTER_INPUT_CLASSES}
+                  />
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    value={filters.handicapMax}
+                    onChange={(event) => handleFilterChange('handicapMax', event.target.value)}
+                    placeholder="Max"
+                    className={FILTER_INPUT_CLASSES}
+                  />
+                </div>
+              </FilterField>
+
+              <FilterField label="Holes">
+                <select
+                  value={filters.holeRange}
+                  onChange={(event) => handleFilterChange('holeRange', event.target.value as HoleRangeValue)}
+                  className={FILTER_INPUT_CLASSES}
+                >
+                  {holeRangeOptions.map((option) => (
+                    <option key={option.value || 'all'} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <FilterField label="Submitted">
+                <select
+                  value={filters.isSubmitted}
+                  onChange={(event) => handleFilterChange('isSubmitted', event.target.value)}
+                  className={FILTER_INPUT_CLASSES}
+                >
+                  {submittedOptions.map((option) => (
+                    <option key={option.value || 'all'} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {data && (
         <>
           <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
@@ -775,76 +1207,6 @@ export function Rounds() {
                 </span>
               )}
             </span>
-          </div>
-
-          {/* Mobile filters */}
-          <div className="lg:hidden bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Date</label>
-                <input
-                  type="date"
-                  value={getFilterValue('roundDate')}
-                  onChange={(e) => handleFilterChange('roundDate', e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">State</label>
-                <select
-                  value={getFilterValue('state')}
-                  onChange={(e) => handleFilterChange('state', e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">All</option>
-                  {stateOptions.map((state) => (
-                    <option key={state} value={state}>{state}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Golfer Name</label>
-                <input
-                  type="text"
-                  value={getFilterValue('golferName')}
-                  onChange={(e) => handleFilterChange('golferName', e.target.value)}
-                  placeholder="Search..."
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">GA Number</label>
-                <input
-                  type="text"
-                  value={getFilterValue('golflinkNo')}
-                  onChange={(e) => handleFilterChange('golflinkNo', e.target.value)}
-                  placeholder="Search..."
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Submitted</label>
-                <select
-                  value={getFilterValue('isSubmitted')}
-                  onChange={(e) => handleFilterChange('isSubmitted', e.target.value)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  {submittedOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Club</label>
-                <input
-                  type="text"
-                  value={getFilterValue('clubName')}
-                  onChange={(e) => handleFilterChange('clubName', e.target.value)}
-                  placeholder="Search..."
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                />
-              </div>
-            </div>
           </div>
 
           {/* Mobile card view */}
@@ -881,92 +1243,18 @@ export function Rounds() {
                           key={header.id}
                           className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                         >
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
+                          {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                            <SortableHeader
+                              column={header.column}
+                              label={String(flexRender(header.column.columnDef.header, header.getContext()))}
+                            />
+                          ) : (
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
                         </th>
                       ))}
                     </tr>
                   ))}
-                  {/* Filter row */}
-                  <tr className="bg-gray-100 dark:bg-gray-600">
-                    <th className="px-4 py-2">
-                      {/* No filter for actions */}
-                    </th>
-                    <th className="px-4 py-2">
-                      <input
-                        type="date"
-                        value={getFilterValue('roundDate')}
-                        onChange={(e) => handleFilterChange('roundDate', e.target.value)}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      {/* No filter for start time */}
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="golferName"
-                        value={getFilterValue('golferName')}
-                        onChange={(v) => handleFilterChange('golferName', v)}
-                        placeholder="Filter..."
-                        inputRef={filterRefs.golferName}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="golflinkNo"
-                        value={getFilterValue('golflinkNo')}
-                        onChange={(v) => handleFilterChange('golflinkNo', v)}
-                        placeholder="Filter..."
-                        inputRef={filterRefs.golflinkNo}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="clubName"
-                        value={getFilterValue('clubName')}
-                        onChange={(v) => handleFilterChange('clubName', v)}
-                        placeholder="Filter..."
-                        inputRef={filterRefs.clubName}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="state"
-                        value={getFilterValue('state')}
-                        onChange={(v) => handleFilterChange('state', v)}
-                        placeholder="Filter..."
-                        type="select"
-                        options={stateOptions}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="compType"
-                        value={getFilterValue('compType')}
-                        onChange={(v) => handleFilterChange('compType', v)}
-                        placeholder="Filter..."
-                        inputRef={filterRefs.compType}
-                      />
-                    </th>
-                    <th className="px-4 py-2">
-                      {/* No filter for HCP */}
-                    </th>
-                    <th className="px-4 py-2">
-                      {/* No filter for holes */}
-                    </th>
-                    <th className="px-4 py-2">
-                      <ColumnFilter
-                        columnId="isSubmitted"
-                        value={getFilterValue('isSubmitted')}
-                        onChange={(v) => handleFilterChange('isSubmitted', v)}
-                        placeholder="Filter..."
-                        type="select"
-                        options={submittedOptions}
-                      />
-                    </th>
-                  </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {table.getRowModel().rows.map((row) => (

@@ -83,6 +83,12 @@ export interface Club {
   };
 }
 
+export interface ScoreType {
+  id: string;
+  uuid: string;
+  name: string;
+}
+
 export interface RoundSummary {
   id: string;
   roundDate: string | null;
