@@ -617,6 +617,9 @@ export function Rounds() {
   const debouncedFilters = useDebounce(filters, 500);
   const activeSort = sorting[0] ?? DEFAULT_SORTING[0];
   const todayDateValue = useMemo(() => getTodayDateValue(), []);
+  const todayBaseDate = useMemo(() => parseDateInputValue(todayDateValue) ?? new Date(), [todayDateValue]);
+  const previousDayDateValue = useMemo(() => formatDateInputValue(addDays(todayBaseDate, -1)), [todayBaseDate]);
+  const nextDayDateValue = useMemo(() => formatDateInputValue(addDays(todayBaseDate, 1)), [todayBaseDate]);
   const scoreTypeFallbacks = useMemo(() => ['stableford', 'stroke', 'par'], []);
   const { data: scoreTypes } = useQuery({
     queryKey: ['scoreTypes'],
@@ -637,7 +640,7 @@ export function Rounds() {
   // Get clubIds from admin user for multi-tenant filtering
   const clubIds = adminUser?.clubIds;
 
-  const { data, isLoading, isFetching, isError, error } = useQuery({
+  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
     queryKey: ['rounds', page, pageSize, debouncedFilters, activeSort, clubIds],
     queryFn: () => getAllRounds({
       page,
@@ -726,20 +729,17 @@ export function Rounds() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const shiftRoundDateRange = (days: number) => {
-    const fallbackDate = parseDateInputValue(todayDateValue) ?? new Date();
-    const currentFrom = parseDateInputValue(filters.roundDateFrom);
-    const currentTo = parseDateInputValue(filters.roundDateTo);
+  const toggleSingleDayRoundDate = (dateValue: string) => {
+    const isActive = filters.roundDateFrom === dateValue && filters.roundDateTo === dateValue;
 
-    let startDate = currentFrom ?? currentTo ?? fallbackDate;
-    let endDate = currentTo ?? currentFrom ?? fallbackDate;
-
-    if (startDate > endDate) {
-      [startDate, endDate] = [endDate, startDate];
+    if (isActive) {
+      handleFilterChange('roundDateFrom', '');
+      handleFilterChange('roundDateTo', '');
+      return;
     }
 
-    handleFilterChange('roundDateFrom', formatDateInputValue(addDays(startDate, days)));
-    handleFilterChange('roundDateTo', formatDateInputValue(addDays(endDate, days)));
+    handleFilterChange('roundDateFrom', dateValue);
+    handleFilterChange('roundDateTo', dateValue);
   };
 
   const clearAllFilters = () => {
@@ -924,9 +924,13 @@ export function Rounds() {
     (count, key) => count + (filters[key] !== '' ? 1 : 0),
     0
   );
+  const isPreviousDayQuickFilterActive =
+    filters.roundDateFrom === previousDayDateValue && filters.roundDateTo === previousDayDateValue;
   const isTodayQuickFilterActive =
     filters.roundDateFrom === todayDateValue && filters.roundDateTo === todayDateValue;
-  const hasRoundDateFilter = filters.roundDateFrom !== '' || filters.roundDateTo !== '';
+  const isNextDayQuickFilterActive =
+    filters.roundDateFrom === nextDayDateValue && filters.roundDateTo === nextDayDateValue;
+  const isUpdatingResults = isFetching && isPlaceholderData;
 
   return (
     <div className="space-y-4">
@@ -991,44 +995,37 @@ export function Rounds() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => shiftRoundDateRange(-1)}
-                  className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => toggleSingleDayRoundDate(previousDayDateValue)}
+                  className={`rounded-full px-3 py-0.5 text-xs font-semibold transition-colors ${
+                    isPreviousDayQuickFilterActive
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                  }`}
                 >
                   -1 day
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    handleFilterChange('roundDateFrom', todayDateValue);
-                    handleFilterChange('roundDateTo', todayDateValue);
-                  }}
+                  onClick={() => toggleSingleDayRoundDate(todayDateValue)}
                   className={`rounded-full px-3 py-0.5 text-xs font-semibold transition-colors ${
                     isTodayQuickFilterActive
                       ? 'bg-blue-600 text-white'
-                      : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   Today
                 </button>
                 <button
                   type="button"
-                  onClick={() => shiftRoundDateRange(1)}
-                  className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => toggleSingleDayRoundDate(nextDayDateValue)}
+                  className={`rounded-full px-3 py-0.5 text-xs font-semibold transition-colors ${
+                    isNextDayQuickFilterActive
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600'
+                  }`}
                 >
                   +1 day
                 </button>
-                {hasRoundDateFilter && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleFilterChange('roundDateFrom', '');
-                      handleFilterChange('roundDateTo', '');
-                    }}
-                    className="rounded-full bg-gray-200 px-3 py-0.5 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -1267,17 +1264,24 @@ export function Rounds() {
       {data && (
         <>
           <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-            <span>
-              Showing {data.data.length} of {data.totalCount.toLocaleString()} rounds
-              {hasActiveFilters && <span className="ml-1 text-blue-600 dark:text-blue-400">(filtered)</span>}
-              {isFetching && (
-                <span className="ml-1 text-orange-500 inline-flex items-center gap-1">
-                  (fetching latest...
-                  <span className="animate-spin inline-block h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></span>
-                  )
-                </span>
-              )}
-            </span>
+            {isUpdatingResults ? (
+              <span className="text-orange-500 inline-flex items-center gap-1">
+                Updating results...
+                <span className="animate-spin inline-block h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></span>
+              </span>
+            ) : (
+              <span>
+                Showing {data.data.length} of {data.totalCount.toLocaleString()} rounds
+                {hasActiveFilters && <span className="ml-1 text-blue-600 dark:text-blue-400">(filtered)</span>}
+                {isFetching && (
+                  <span className="ml-1 text-orange-500 inline-flex items-center gap-1">
+                    (fetching latest...
+                    <span className="animate-spin inline-block h-3 w-3 border-2 border-orange-500 border-t-transparent rounded-full"></span>
+                    )
+                  </span>
+                )}
+              </span>
+            )}
           </div>
 
           {/* Mobile card view */}
@@ -1352,41 +1356,43 @@ export function Rounds() {
           </div>
 
           {/* Pagination */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Page {data.page} of {data.totalPages}
+          {!isUpdatingResults && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Page {data.page} of {data.totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setPage((p: number) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage((p: number) => Math.min(data.totalPages, p + 1))}
+                  disabled={page >= data.totalPages}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setPage(data.totalPages)}
+                  disabled={page >= data.totalPages}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
+                >
+                  Last
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              >
-                First
-              </button>
-              <button
-                onClick={() => setPage((p: number) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage((p: number) => Math.min(data.totalPages, p + 1))}
-                disabled={page >= data.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              >
-                Next
-              </button>
-              <button
-                onClick={() => setPage(data.totalPages)}
-                disabled={page >= data.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-800"
-              >
-                Last
-              </button>
-            </div>
-          </div>
+          )}
         </>
       )}
     </div>
