@@ -145,11 +145,14 @@ export interface GetAllRoundsParams {
   page?: number;
   pageSize?: number;
   golferName?: string;
+  golferFirstName?: string;
+  golferLastName?: string;
   golflinkNo?: string;
   clubName?: string;
   state?: string;
   compType?: string;
   roundType?: string;
+  operatingSystem?: string;
   isSubmitted?: boolean;
   roundDate?: string;
   roundDateFrom?: string;
@@ -168,7 +171,11 @@ export interface GetAllRoundsParams {
 // Lightweight response for polling counts only
 export interface RoundsCountResponse {
   todayInProgressCount: number;
+  todayInProgressIosCount: number;
+  todayInProgressAndroidCount: number;
   todaySubmittedCount: number;
+  todaySubmittedIosCount: number;
+  todaySubmittedAndroidCount: number;
 }
 
 export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<RoundsPaginatedResponse> {
@@ -176,11 +183,14 @@ export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<Rou
     page = 1,
     pageSize = 20,
     golferName,
+    golferFirstName,
+    golferLastName,
     golflinkNo,
     clubName,
     state,
     compType,
     roundType,
+    operatingSystem,
     isSubmitted,
     roundDate,
     roundDateFrom,
@@ -201,11 +211,14 @@ export async function getAllRounds(params: GetAllRoundsParams = {}): Promise<Rou
       page,
       pageSize,
       golferName: golferName || undefined,
+      golferFirstName: golferFirstName || undefined,
+      golferLastName: golferLastName || undefined,
       golflinkNo: golflinkNo || undefined,
       clubName: clubName || undefined,
       state: state || undefined,
       compType: compType || undefined,
       roundType: roundType || undefined,
+      operatingSystem: operatingSystem || undefined,
       isSubmitted: isSubmitted !== undefined ? isSubmitted : undefined,
       roundDate: roundDate || undefined,
       roundDateFrom: roundDateFrom || undefined,
@@ -238,7 +251,11 @@ export async function getRoundsCounts(clubIds?: string[]): Promise<RoundsCountRe
   });
   return {
     todayInProgressCount: response.data.todayInProgressCount,
+    todayInProgressIosCount: response.data.todayInProgressIosCount,
+    todayInProgressAndroidCount: response.data.todayInProgressAndroidCount,
     todaySubmittedCount: response.data.todaySubmittedCount,
+    todaySubmittedIosCount: response.data.todaySubmittedIosCount,
+    todaySubmittedAndroidCount: response.data.todaySubmittedAndroidCount,
   };
 }
 

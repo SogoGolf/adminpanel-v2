@@ -100,6 +100,7 @@ export interface RoundSummary {
   clubState: string | null;
   compType: string | null;
   roundType: string | null;
+  operatingSystem: string | null;
   dailyHandicap: number | null;
   golfLinkHandicap: number | null;
   compScoreTotal: number | null;
@@ -110,7 +111,11 @@ export interface RoundSummary {
 
 export interface RoundsPaginatedResponse extends PaginatedResponse<RoundSummary> {
   todayInProgressCount: number;
+  todayInProgressIosCount: number;
+  todayInProgressAndroidCount: number;
   todaySubmittedCount: number;
+  todaySubmittedIosCount: number;
+  todaySubmittedAndroidCount: number;
 }
 
 export interface HoleScore {

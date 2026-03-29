@@ -22,6 +22,7 @@ type RoundSortField =
   | 'clubName'
   | 'state'
   | 'compType'
+  | 'operatingSystem'
   | 'dailyHandicap'
   | 'holeCount'
   | 'isSubmitted';
@@ -31,11 +32,13 @@ type RoundsFilterState = {
   roundDateTo: string;
   startTimeFrom: string;
   startTimeTo: string;
-  golferName: string;
+  golferFirstName: string;
+  golferLastName: string;
   golflinkNo: string;
   clubName: string;
   state: string;
   compType: string;
+  operatingSystem: string;
   handicapMin: string;
   handicapMax: string;
   holeRange: HoleRangeValue;
@@ -68,6 +71,12 @@ const submittedOptions = [
   { value: 'false', label: 'No' },
 ];
 
+const operatingSystemOptions = [
+  { value: '', label: 'All OS' },
+  { value: 'iOS', label: 'iOS' },
+  { value: 'Android', label: 'Android' },
+];
+
 const holeRangeOptions: { value: HoleRangeValue; label: string }[] = [
   { value: '', label: 'All' },
   { value: '1-9', label: '1-9 holes' },
@@ -80,11 +89,13 @@ const DEFAULT_FILTERS: RoundsFilterState = {
   roundDateTo: '',
   startTimeFrom: '',
   startTimeTo: '',
-  golferName: '',
+  golferFirstName: '',
+  golferLastName: '',
   golflinkNo: '',
   clubName: '',
   state: '',
   compType: '',
+  operatingSystem: '',
   handicapMin: '',
   handicapMax: '',
   holeRange: '',
@@ -97,6 +108,7 @@ const ADVANCED_FILTER_KEYS: Array<keyof RoundsFilterState> = [
   'clubName',
   'state',
   'compType',
+  'operatingSystem',
   'handicapMin',
   'handicapMax',
   'holeRange',
@@ -111,6 +123,7 @@ const SORTABLE_COLUMN_IDS: RoundSortField[] = [
   'clubName',
   'state',
   'compType',
+  'operatingSystem',
   'dailyHandicap',
   'holeCount',
   'isSubmitted',
@@ -242,6 +255,17 @@ function isToday(dateString?: string | null): boolean {
 function formatRoundValue(value?: string | null): string {
   if (!value) return '-';
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
+function getOperatingSystemBadgeClasses(operatingSystem?: string | null): string {
+  switch (operatingSystem) {
+    case 'iOS':
+      return 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300';
+    case 'Android':
+      return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300';
+    default:
+      return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200';
+  }
 }
 
 function parseOptionalNumber(value: string): number | undefined {
@@ -544,6 +568,9 @@ function RoundCard({
           </span>
         )}
         <span className="text-gray-500 dark:text-gray-400">
+          OS: <span className="text-gray-900 dark:text-gray-100">{round.operatingSystem || '-'}</span>
+        </span>
+        <span className="text-gray-500 dark:text-gray-400">
           HCP: <span className="text-gray-900 dark:text-gray-100">{round.dailyHandicap?.toFixed(1) ?? '-'}</span>
         </span>
         <span className="text-gray-500 dark:text-gray-400">
@@ -619,11 +646,13 @@ export function Rounds() {
       roundDateTo: debouncedFilters.roundDateTo || undefined,
       startTimeFrom: debouncedFilters.startTimeFrom || undefined,
       startTimeTo: debouncedFilters.startTimeTo || undefined,
-      golferName: debouncedFilters.golferName || undefined,
+      golferFirstName: debouncedFilters.golferFirstName || undefined,
+      golferLastName: debouncedFilters.golferLastName || undefined,
       golflinkNo: debouncedFilters.golflinkNo || undefined,
       clubName: debouncedFilters.clubName || undefined,
       state: debouncedFilters.state || undefined,
       compType: debouncedFilters.compType || undefined,
+      operatingSystem: debouncedFilters.operatingSystem || undefined,
       handicapMin: parseOptionalNumber(debouncedFilters.handicapMin),
       handicapMax: parseOptionalNumber(debouncedFilters.handicapMax),
       holeCountMin: holeBounds.min,
@@ -834,6 +863,18 @@ export function Rounds() {
           return formatRoundValue(value);
         },
       }),
+      columnHelper.accessor('operatingSystem', {
+        header: 'OS',
+        enableSorting: true,
+        cell: (info) => {
+          const value = info.getValue();
+          return (
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getOperatingSystemBadgeClasses(value)}`}>
+              {value || '-'}
+            </span>
+          );
+        },
+      }),
       columnHelper.accessor('dailyHandicap', {
         header: 'HCP',
         enableSorting: true,
@@ -894,8 +935,12 @@ export function Rounds() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Rounds</h1>
           {data && (
             <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
-              <div>In Progress for today: {data.todayInProgressCount}</div>
-              <div>Submitted today: {data.todaySubmittedCount}</div>
+              <div>
+                In Progress for today: {data.todayInProgressCount} (iOS: {data.todayInProgressIosCount}, Android: {data.todayInProgressAndroidCount})
+              </div>
+              <div>
+                Submitted today: {data.todaySubmittedCount} (iOS: {data.todaySubmittedIosCount}, Android: {data.todaySubmittedAndroidCount})
+              </div>
             </div>
           )}
         </div>
@@ -939,7 +984,7 @@ export function Rounds() {
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div>
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className={FILTER_LABEL_CLASSES}>Round Date</span>
@@ -1003,12 +1048,24 @@ export function Rounds() {
           </div>
 
           <div>
-            <FilterField label="Golfer Name">
+            <FilterField label="First Name">
               <input
                 type="text"
-                value={filters.golferName}
-                onChange={(event) => handleFilterChange('golferName', event.target.value)}
-                placeholder="Search golfer"
+                value={filters.golferFirstName}
+                onChange={(event) => handleFilterChange('golferFirstName', event.target.value)}
+                placeholder="Search first name"
+                className={FILTER_INPUT_CLASSES}
+              />
+            </FilterField>
+          </div>
+
+          <div>
+            <FilterField label="Last Name">
+              <input
+                type="text"
+                value={filters.golferLastName}
+                onChange={(event) => handleFilterChange('golferLastName', event.target.value)}
+                placeholder="Search last name"
                 className={FILTER_INPUT_CLASSES}
               />
             </FilterField>
@@ -1040,7 +1097,7 @@ export function Rounds() {
                 {isAdvancedFiltersOpen ? 'Hide More Filters' : 'Show More Filters'}
               </div>
               <div className="text-xs text-gray-600 dark:text-gray-400">
-                Start time, club, state, type, handicap, holes and submitted status
+                Start time, club, state, type, OS, handicap, holes and submitted status
               </div>
             </div>
 
@@ -1133,6 +1190,20 @@ export function Rounds() {
                   {scoreTypeOptions.map((type) => (
                     <option key={type} value={type}>
                       {formatRoundValue(type)}
+                    </option>
+                  ))}
+                </select>
+              </FilterField>
+
+              <FilterField label="OS">
+                <select
+                  value={filters.operatingSystem}
+                  onChange={(event) => handleFilterChange('operatingSystem', event.target.value)}
+                  className={FILTER_INPUT_CLASSES}
+                >
+                  {operatingSystemOptions.map((option) => (
+                    <option key={option.value || 'all'} value={option.value}>
+                      {option.label}
                     </option>
                   ))}
                 </select>
