@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import {
@@ -14,18 +14,6 @@ import { useAuth } from '../contexts/AuthContext';
 import type { RoundSummary, HoleScore } from '../types';
 
 type HoleRangeValue = '' | '1-9' | '10-18' | '18';
-type RoundSortField =
-  | 'roundDate'
-  | 'startTime'
-  | 'golferName'
-  | 'golflinkNo'
-  | 'clubName'
-  | 'state'
-  | 'compType'
-  | 'operatingSystem'
-  | 'dailyHandicap'
-  | 'holeCount'
-  | 'isSubmitted';
 
 type RoundsFilterState = {
   roundDateFrom: string;
@@ -112,20 +100,6 @@ const ADVANCED_FILTER_KEYS: Array<keyof RoundsFilterState> = [
   'handicapMin',
   'handicapMax',
   'holeRange',
-  'isSubmitted',
-];
-
-const SORTABLE_COLUMN_IDS: RoundSortField[] = [
-  'roundDate',
-  'startTime',
-  'golferName',
-  'golflinkNo',
-  'clubName',
-  'state',
-  'compType',
-  'operatingSystem',
-  'dailyHandicap',
-  'holeCount',
   'isSubmitted',
 ];
 
@@ -299,14 +273,23 @@ function formatDateInputValue(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function formatLastUpdatedTimestamp(timestamp: number): string {
+  if (!timestamp) return '-';
+
+  return new Date(timestamp).toLocaleString([], {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).toLowerCase();
+}
+
 function addDays(date: Date, days: number): Date {
   const nextDate = new Date(date);
   nextDate.setDate(nextDate.getDate() + days);
   return nextDate;
-}
-
-function isRoundSortField(value: string): value is RoundSortField {
-  return SORTABLE_COLUMN_IDS.includes(value as RoundSortField);
 }
 
 function getInitialViewState(): { filters: RoundsFilterState; sorting: SortingState } {
@@ -338,24 +321,9 @@ function getInitialViewState(): { filters: RoundsFilterState; sorting: SortingSt
       filters[key] = value;
     }
 
-    const sorting = Array.isArray(parsed.sorting)
-      ? parsed.sorting
-          .filter(
-            (sort): sort is SortingState[number] =>
-              typeof sort === 'object' &&
-              sort !== null &&
-              'id' in sort &&
-              typeof sort.id === 'string' &&
-              isRoundSortField(sort.id) &&
-              'desc' in sort &&
-              typeof sort.desc === 'boolean'
-          )
-          .slice(0, 1)
-      : [];
-
     return {
       filters,
-      sorting: sorting.length > 0 ? sorting : DEFAULT_SORTING,
+      sorting: DEFAULT_SORTING,
     };
   } catch {
     return { filters: DEFAULT_FILTERS, sorting: DEFAULT_SORTING };
@@ -600,7 +568,6 @@ export function Rounds() {
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [knownCounts, setKnownCounts] = useState<{ inProgress: number; submitted: number } | null>(null);
-  const [newRoundsAvailable, setNewRoundsAvailable] = useState(false);
 
   const toggleRow = (id: string) => {
     setExpandedRows((prev) => {
@@ -640,7 +607,7 @@ export function Rounds() {
   // Get clubIds from admin user for multi-tenant filtering
   const clubIds = adminUser?.clubIds;
 
-  const { data, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
+  const { data, dataUpdatedAt, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
     queryKey: ['rounds', page, pageSize, debouncedFilters, activeSort, clubIds],
     queryFn: () => getAllRounds({
       page,
@@ -695,35 +662,33 @@ export function Rounds() {
     }
   }, [data, knownCounts]);
 
-  // Detect when polled counts differ from known counts
   useEffect(() => {
     if (polledCounts && knownCounts) {
-      const hasNewRounds =
+      const hasUpdatedCounts =
         polledCounts.todayInProgressCount !== knownCounts.inProgress ||
         polledCounts.todaySubmittedCount !== knownCounts.submitted;
-      setNewRoundsAvailable(hasNewRounds);
-    }
-  }, [polledCounts, knownCounts]);
 
-  // Refresh data and update known counts
-  const handleRefreshRounds = useCallback(() => {
-    setNewRoundsAvailable(false);
-    if (polledCounts) {
-      setKnownCounts({
-        inProgress: polledCounts.todayInProgressCount,
-        submitted: polledCounts.todaySubmittedCount,
-      });
+      if (hasUpdatedCounts) {
+        setKnownCounts({
+          inProgress: polledCounts.todayInProgressCount,
+          submitted: polledCounts.todaySubmittedCount,
+        });
+        queryClient.invalidateQueries({ queryKey: ['rounds'] });
+      }
     }
-    queryClient.invalidateQueries({ queryKey: ['rounds'] });
-  }, [polledCounts, queryClient]);
+  }, [knownCounts, polledCounts, queryClient]);
 
   useEffect(() => {
     setPage(1);
   }, [debouncedFilters, sorting]);
 
   useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters, sorting }));
-  }, [filters, sorting]);
+    setSorting(DEFAULT_SORTING);
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters }));
+  }, [filters]);
 
   const handleFilterChange = <K extends keyof RoundsFilterState>(key: K, value: RoundsFilterState[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -945,26 +910,13 @@ export function Rounds() {
               <div>
                 Submitted today: {data.todaySubmittedCount} (iOS: {data.todaySubmittedIosCount}, Android: {data.todaySubmittedAndroidCount})
               </div>
+              <div className="text-xs text-yellow-600 dark:text-yellow-400">
+                Last updated: {formatLastUpdatedTimestamp(dataUpdatedAt)}
+              </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* New rounds notification */}
-      {newRoundsAvailable && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-blue-600 dark:text-blue-400 text-lg">●</span>
-            <span className="text-blue-800 dark:text-blue-200 font-medium">Round updates available</span>
-          </div>
-          <button
-            onClick={handleRefreshRounds}
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-      )}
 
       {isLoading && !data && (
         <div className="fixed inset-0 flex flex-col justify-center items-center bg-gray-100/80 dark:bg-gray-900/80 z-50">
@@ -1286,7 +1238,7 @@ export function Rounds() {
 
           {/* Mobile card view */}
           <div className="lg:hidden space-y-3 relative">
-            {isFetching && (
+            {isUpdatingResults && (
               <div className="absolute inset-0 bg-white/60 dark:bg-gray-800/60 flex items-center justify-center z-10 rounded-lg">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
               </div>
@@ -1303,7 +1255,7 @@ export function Rounds() {
 
           {/* Desktop table view */}
           <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden relative">
-            {isFetching && (
+            {isUpdatingResults && (
               <div className="absolute inset-0 bg-white/60 dark:bg-gray-800/60 flex items-center justify-center z-10">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
               </div>
