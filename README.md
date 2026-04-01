@@ -79,6 +79,12 @@ gcloud run deploy sogo-admin-panel \
   --allow-unauthenticated
 ```
 
+Deploy the separate dev site, which is pinned to `mongo-api-test` and `sogotestdb`, with:
+
+```bash
+sh scripts/deploy-dev.sh
+```
+
 ### URLs
 
 - **Production**: https://admin-panel.app

@@ -10,6 +10,7 @@ import {
   type SortingState,
 } from '@tanstack/react-table';
 import { getAllRounds, getRoundById, getRoundsCounts, getScoreTypes } from '../api/mongodb';
+import { roundsViewStorageKey } from '../config/environment';
 import { useAuth } from '../contexts/AuthContext';
 import type { RoundSummary, HoleScore } from '../types';
 
@@ -104,7 +105,6 @@ const ADVANCED_FILTER_KEYS: Array<keyof RoundsFilterState> = [
 ];
 
 const DEFAULT_SORTING: SortingState = [{ id: 'startTime', desc: true }];
-const STORAGE_KEY = 'rounds-view-state-v2';
 const FILTER_INPUT_CLASSES =
   'w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400';
 const FILTER_LABEL_CLASSES = 'mb-1 block text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400';
@@ -294,7 +294,7 @@ function addDays(date: Date, days: number): Date {
 
 function getInitialViewState(): { filters: RoundsFilterState; sorting: SortingState } {
   try {
-    const stored = sessionStorage.getItem(STORAGE_KEY);
+    const stored = sessionStorage.getItem(roundsViewStorageKey);
     if (!stored) {
       return { filters: DEFAULT_FILTERS, sorting: DEFAULT_SORTING };
     }
@@ -687,7 +687,7 @@ export function Rounds() {
   }, []);
 
   useEffect(() => {
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters }));
+    sessionStorage.setItem(roundsViewStorageKey, JSON.stringify({ filters }));
   }, [filters]);
 
   const handleFilterChange = <K extends keyof RoundsFilterState>(key: K, value: RoundsFilterState[K]) => {

@@ -19,6 +19,12 @@ import { AuditLog } from './pages/AuditLog';
 import { Login } from './pages/Login';
 import Settings from './pages/Settings';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import {
+  cacheNamespace,
+  environmentBannerText,
+  isNonProdEnvironment,
+  queryCacheStorageKey,
+} from './config/environment';
 import './index.css';
 
 // Map features to menu items
@@ -46,7 +52,7 @@ const queryClient = new QueryClient({
 // Persist cache to localStorage
 const persister = createSyncStoragePersister({
   storage: window.localStorage,
-  key: 'sogo-admin-cache',
+  key: queryCacheStorageKey,
 });
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -146,6 +152,18 @@ function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
+        {isNonProdEnvironment && environmentBannerText && (
+          <div className="bg-amber-500 border-b-4 border-amber-700 px-4 py-3 text-slate-950 shadow-sm sm:px-6">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="inline-flex items-center rounded-full bg-slate-950 px-3 py-1 text-xs font-black uppercase tracking-[0.2em] text-amber-300">
+                {environmentBannerText}
+              </span>
+              <span className="text-sm font-semibold">
+                Test environment only. Changes here go to the dev Mongo API and should not be treated as production data.
+              </span>
+            </div>
+          </div>
+        )}
         <header className="bg-white dark:bg-gray-800 shadow-sm px-4 sm:px-6 py-4 flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -295,7 +313,7 @@ function App() {
       <TenantProvider>
         <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+          persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24, buster: cacheNamespace }}
         >
           <AuthProvider>
             <BrowserRouter>
