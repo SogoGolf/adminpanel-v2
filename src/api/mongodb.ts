@@ -1,5 +1,21 @@
 import axios from 'axios';
-import type { Golfer, Transaction, TransactionType, PaginatedResponse, Club, RoundDetail, RoundsPaginatedResponse, ClosedComp, ClosedCompParticipant, ClosedCompRound, ClosedCompLeaderboard, AuditLog, ScoreType } from '../types';
+import type {
+  Golfer,
+  Transaction,
+  TransactionType,
+  PaginatedResponse,
+  Club,
+  RoundDetail,
+  RoundsPaginatedResponse,
+  ClosedComp,
+  ClosedCompParticipant,
+  ClosedCompRound,
+  ClosedCompLeaderboard,
+  AuditLog,
+  ScoreType,
+  MobileAppVersionConfig,
+  UpdateMobileAppVersionConfigRequest,
+} from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository, IAuditLogRepository, GetAuditLogsParams } from './interfaces';
 
 const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
@@ -138,6 +154,23 @@ export async function getClubs(): Promise<Club[]> {
 
 export async function getScoreTypes(): Promise<ScoreType[]> {
   const response = await api.get<ScoreType[]>('/scoreTypes');
+  return response.data;
+}
+
+export async function getMobileAppVersionConfig(requestingUserEmail: string): Promise<MobileAppVersionConfig> {
+  const response = await api.get<MobileAppVersionConfig>('/mobileAppVersionConfig', {
+    params: { requestingUserEmail },
+  });
+  return response.data;
+}
+
+export async function updateMobileAppVersionConfig(
+  requestingUserEmail: string,
+  config: UpdateMobileAppVersionConfigRequest,
+): Promise<MobileAppVersionConfig> {
+  const response = await api.put<MobileAppVersionConfig>('/mobileAppVersionConfig', config, {
+    params: { requestingUserEmail },
+  });
   return response.data;
 }
 

@@ -89,6 +89,28 @@ export interface ScoreType {
   name: string;
 }
 
+export interface MobileAppVersionPlatformSettings {
+  minimumRequiredVersion: string;
+  optionalUpdatePromptEnabled: boolean;
+  forceUpdateEnabled: boolean;
+  updateMessage: string;
+}
+
+export interface MobileAppVersionConfig {
+  id: string;
+  versionString: string;
+  ios: MobileAppVersionPlatformSettings;
+  android: MobileAppVersionPlatformSettings;
+  updatedAt?: string | null;
+  updatedBy?: string;
+}
+
+export interface UpdateMobileAppVersionConfigRequest {
+  ios: MobileAppVersionPlatformSettings;
+  android: MobileAppVersionPlatformSettings;
+  updatedBy?: string;
+}
+
 export interface RoundSummary {
   id: string;
   roundDate: string | null;
