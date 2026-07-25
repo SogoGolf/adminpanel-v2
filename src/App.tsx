@@ -325,7 +325,17 @@ function App() {
       <TenantProvider>
         <PersistQueryClientProvider
           client={queryClient}
-          persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24, buster: cacheNamespace }}
+          persistOptions={{
+            persister,
+            maxAge: 1000 * 60 * 60 * 24,
+            buster: cacheNamespace,
+            dehydrateOptions: {
+              // The release manager form must never hydrate from a stale
+              // localStorage copy of the app-update config.
+              shouldDehydrateQuery: (query) =>
+                query.state.status === 'success' && query.queryKey[0] !== 'releaseManagerConfig',
+            },
+          }}
         >
           <AuthProvider>
             <BrowserRouter>

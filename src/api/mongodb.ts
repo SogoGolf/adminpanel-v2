@@ -195,6 +195,17 @@ export async function publishReleaseManagerConfig(
   return response.data;
 }
 
+export async function discardReleaseManagerDraft(
+  requestingUserEmail: string,
+  platform: ReleasePlatform,
+): Promise<ReleaseManagerPlatformResponse> {
+  const response = await api.delete<ReleaseManagerPlatformResponse>(
+    `/mobileAppVersionConfig/admin/${platform}/draft`,
+    { params: { requestingUserEmail } },
+  );
+  return response.data;
+}
+
 export interface GetAllRoundsParams {
   page?: number;
   pageSize?: number;

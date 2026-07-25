@@ -7,6 +7,7 @@ import {
   getReleaseManagerConfig,
   saveReleaseManagerDraft,
   publishReleaseManagerConfig,
+  discardReleaseManagerDraft,
 } from '../api/mongodb';
 import type {
   MobileAppVersionPlatformSettings,
@@ -24,11 +25,13 @@ import { UpdatePromptPreview } from '../components/release-manager/UpdatePromptP
 import sgLogo from '../assets/simple_golf_logo.png';
 import '../components/release-manager/releaseManager.css';
 
-const LIMITS = { title: 32, detail: 90, features: 5, fixRows: 4, fixes: 3, message: 160 };
+const LIMITS = { title: 32, detail: 90, features: 5, fixRows: 4, fixes: 3, message: 160, footnote: 200 };
 const VERSION_RE = /^\d+\.\d+(\.\d+)?$/;
 
 interface FormFeature {
   icon: FeatureIconKey;
+  /** Original SF Symbol string when it isn't one of the selectable eight — preserved on round-trip. */
+  rawIcon?: string;
   title: string;
   detail: string;
 }
@@ -62,11 +65,15 @@ function settingsToForm(settings: MobileAppVersionPlatformSettings | null | unde
     forceUpdateEnabled: Boolean(settings.forceUpdateEnabled),
     optionalUpdatePromptEnabled: Boolean(settings.optionalUpdatePromptEnabled),
     updateMessage: settings.updateMessage ?? '',
-    features: (settings.features ?? []).map((f) => ({
-      icon: SF_TO_ICON[f.icon] ?? 'flag',
-      title: f.title ?? '',
-      detail: f.detail ?? '',
-    })),
+    features: (settings.features ?? []).map((f) => {
+      const known = SF_TO_ICON[f.icon];
+      return {
+        icon: known ?? 'flag',
+        ...(known ? {} : { rawIcon: f.icon }),
+        title: f.title ?? '',
+        detail: f.detail ?? '',
+      };
+    }),
     fixRows: settings.fixRows ?? [],
     fixes: settings.fixes ?? [],
     footnote: settings.footnote ?? '',
@@ -83,7 +90,7 @@ function formToContent(form: FormState, updatedBy?: string): ReleaseManagerConte
   };
   if (form.features.length) {
     content.features = form.features.map((f) => ({
-      icon: ICON_TO_SF[f.icon],
+      icon: f.rawIcon ?? ICON_TO_SF[f.icon],
       title: f.title.trim(),
       detail: f.detail.trim(),
     }));
@@ -115,6 +122,10 @@ function validate(c: FormState): { errs: string[]; warns: string[] } {
   if (c.features.length === 2)
     warns.push('Two features sits awkwardly between tiers — add a third or fold one into fixes');
   if (!c.updateMessage.trim()) errs.push('Fallback message is required — older app builds show only this');
+  if (c.updateMessage.trim().length > LIMITS.message)
+    errs.push(`Fallback message is ${c.updateMessage.trim().length} chars (max ${LIMITS.message})`);
+  if (c.footnote.trim().length > LIMITS.footnote)
+    errs.push(`Footnote is ${c.footnote.trim().length} chars (max ${LIMITS.footnote})`);
   return { errs, warns };
 }
 
@@ -228,9 +239,13 @@ function FeatureEditor({ items, onChange }: {
               <select
                 className="ra-in"
                 style={{ width: 210 }}
-                value={f.icon}
-                onChange={(e) => set(i, { icon: e.target.value as FeatureIconKey })}
+                value={f.rawIcon ? '__custom' : f.icon}
+                onChange={(e) => {
+                  if (e.target.value === '__custom') return;
+                  set(i, { icon: e.target.value as FeatureIconKey, rawIcon: undefined });
+                }}
               >
+                {f.rawIcon && <option value="__custom">Custom — {f.rawIcon}</option>}
                 {ICON_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -335,15 +350,21 @@ export default function ReleaseManager() {
   const [showJson, setShowJson] = useState(false);
   const [pendingPlatform, setPendingPlatform] = useState<ReleasePlatform | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const hydratedSigRef = useRef<string>(JSON.stringify(EMPTY_FORM));
   const pendingHydrateRef = useRef(true);
+  const platformRef = useRef(platform);
+  platformRef.current = platform;
 
   const queryKey = ['releaseManagerConfig', platform, adminEmail];
   const { data, isLoading, error: loadError, refetch } = useQuery({
     queryKey,
     queryFn: () => getReleaseManagerConfig(adminEmail, platform),
     enabled: Boolean(adminEmail),
+    // This form edits a production kill switch — never trust a cached copy.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const sig = JSON.stringify(form);
@@ -352,13 +373,18 @@ export default function ReleaseManager() {
 
   useEffect(() => {
     if (!data) return;
-    if (!pendingHydrateRef.current && isDirty) return;
     const next = settingsToForm(data.draft ?? data.live);
-    hydratedSigRef.current = JSON.stringify(next);
+    const nextSig = JSON.stringify(next);
+    if (!pendingHydrateRef.current) {
+      // Never clobber in-progress edits; once the form is clean again, a
+      // skipped server update is picked up on the next run (sig is a dep).
+      if (sig !== hydratedSigRef.current) return;
+      if (nextSig === hydratedSigRef.current) return;
+    }
+    hydratedSigRef.current = nextSig;
     pendingHydrateRef.current = false;
     setForm(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, sig]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -394,32 +420,57 @@ export default function ReleaseManager() {
   }, [form, platform]);
 
   const platformLabel = platform === 'ios' ? 'iOS' : 'Android';
+  const labelOf = (p: ReleasePlatform) => (p === 'ios' ? 'iOS' : 'Android');
+
+  // The response's own platform keys the cache write, and UI state is only
+  // touched when that platform is still the one on screen — a slow response
+  // arriving after a platform switch can't poison the other platform's cache.
+  interface MutationVars {
+    platform: ReleasePlatform;
+    content: ReleaseManagerContentRequest;
+  }
+
+  const applyResponse = (
+    response: Awaited<ReturnType<typeof getReleaseManagerConfig>>,
+    flash: string,
+    source: 'draft' | 'live',
+  ) => {
+    queryClient.setQueryData(['releaseManagerConfig', response.platform, adminEmail], response);
+    if (response.platform !== platformRef.current) return;
+    const next = settingsToForm(source === 'draft' ? response.draft ?? response.live : response.live);
+    hydratedSigRef.current = JSON.stringify(next);
+    setForm(next);
+    setSaved(flash);
+    setSaveError(null);
+  };
+
+  const mutationError = (error: unknown, vars: MutationVars) => {
+    if (vars.platform !== platformRef.current) return;
+    setSaveError(serverErrorMessage(error));
+  };
 
   const draftMutation = useMutation({
-    mutationFn: () => saveReleaseManagerDraft(adminEmail, platform, formToContent(form, adminEmail)),
-    onSuccess: (response) => {
-      queryClient.setQueryData(queryKey, response);
-      hydratedSigRef.current = JSON.stringify(settingsToForm(response.draft ?? response.live));
-      setSaved('Draft saved');
-      setSaveError(null);
-    },
-    onError: (error) => setSaveError(serverErrorMessage(error)),
+    mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(adminEmail, vars.platform, vars.content),
+    onSuccess: (response) => applyResponse(response, 'Draft saved', 'draft'),
+    onError: mutationError,
   });
 
   const publishMutation = useMutation({
-    mutationFn: () => publishReleaseManagerConfig(adminEmail, platform, formToContent(form, adminEmail)),
-    onSuccess: (response) => {
-      queryClient.setQueryData(queryKey, response);
-      const next = settingsToForm(response.live);
-      hydratedSigRef.current = JSON.stringify(next);
-      setForm(next);
-      setSaved(`Published to ${platformLabel}`);
-      setSaveError(null);
-    },
-    onError: (error) => setSaveError(serverErrorMessage(error)),
+    mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(adminEmail, vars.platform, vars.content),
+    onSuccess: (response) => applyResponse(response, `Published to ${labelOf(response.platform)}`, 'live'),
+    onError: mutationError,
   });
 
-  const busy = draftMutation.isPending || publishMutation.isPending;
+  const discardMutation = useMutation({
+    mutationFn: (vars: { platform: ReleasePlatform }) => discardReleaseManagerDraft(adminEmail, vars.platform),
+    onSuccess: (response) => applyResponse(response, 'Draft discarded', 'live'),
+    onError: (error, vars) => {
+      if (vars.platform !== platformRef.current) return;
+      setSaveError(serverErrorMessage(error));
+    },
+  });
+
+  const busy = draftMutation.isPending || publishMutation.isPending || discardMutation.isPending;
 
   const requestPlatformSwitch = (next: ReleasePlatform) => {
     if (next === platform) return;
@@ -432,6 +483,8 @@ export default function ReleaseManager() {
 
   const switchPlatform = (next: ReleasePlatform) => {
     pendingHydrateRef.current = true;
+    hydratedSigRef.current = JSON.stringify(EMPTY_FORM);
+    setForm(EMPTY_FORM);
     setPlatform(next);
     setSaved(null);
     setSaveError(null);
@@ -442,7 +495,7 @@ export default function ReleaseManager() {
     if (form.forceUpdateEnabled) {
       setConfirmPublish(true);
     } else {
-      publishMutation.mutate();
+      publishMutation.mutate({ platform, content: formToContent(form, adminEmail) });
     }
   };
 
@@ -451,6 +504,7 @@ export default function ReleaseManager() {
     ? `Last published ${lastPublished} by ${data?.live.updatedBy || 'unknown'}`
     : 'Not published from this screen yet';
 
+  const configReady = !isLoading && !loadError && Boolean(data);
   const previewVersion = form.minimumRequiredVersion || '—';
   const mode = form.forceUpdateEnabled ? 'Forced' : form.optionalUpdatePromptEnabled ? 'Optional' : 'Off';
 
@@ -483,11 +537,13 @@ export default function ReleaseManager() {
               </div>
               <div>
                 <div className="k">Editing</div>
-                <div className="v num">{form.minimumRequiredVersion || '—'}</div>
+                <div className="v num">{configReady ? form.minimumRequiredVersion || '—' : '—'}</div>
               </div>
               <div>
                 <div className="k">Mode</div>
-                <div className={'v' + (form.forceUpdateEnabled ? ' on' : '')}>{mode}</div>
+                <div className={'v' + (configReady && form.forceUpdateEnabled ? ' on' : '')}>
+                  {configReady ? mode : '—'}
+                </div>
               </div>
             </div>
           </div>
@@ -524,6 +580,7 @@ export default function ReleaseManager() {
                       <select
                         className="ra-in"
                         value={platform}
+                        disabled={busy}
                         onChange={(e) => requestPlatformSwitch(e.target.value as ReleasePlatform)}
                       >
                         <option value="ios">iOS</option>
@@ -653,10 +710,20 @@ export default function ReleaseManager() {
                   <span className="audit">{auditLine}</span>
                   <span className="sp" />
                   {saved && <span className="ra-saved">✓ {saved}</span>}
+                  {draftExists && (
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setConfirmDiscard(true)}
+                      disabled={busy}
+                    >
+                      {discardMutation.isPending ? 'Discarding…' : 'Discard draft'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="btn ghost"
-                    onClick={() => draftMutation.mutate()}
+                    onClick={() => draftMutation.mutate({ platform, content: formToContent(form, adminEmail) })}
                     disabled={busy}
                   >
                     {draftMutation.isPending ? 'Saving…' : 'Save draft'}
@@ -701,7 +768,7 @@ export default function ReleaseManager() {
                 </button>
               </div>
             </div>
-            {isLoading ? (
+            {!configReady ? (
               <div className="ra-skel" style={{ width: 310, height: 560, borderRadius: 40 }} />
             ) : (
               <UpdatePromptPreview
@@ -794,9 +861,23 @@ export default function ReleaseManager() {
         variant="danger"
         onConfirm={() => {
           setConfirmPublish(false);
-          publishMutation.mutate();
+          publishMutation.mutate({ platform, content: formToContent(form, adminEmail) });
         }}
         onCancel={() => setConfirmPublish(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmDiscard}
+        title={`Discard ${platformLabel} draft?`}
+        message={`This deletes the staged ${platformLabel} draft and reverts the form to the live values. The live config golfers see is not affected.`}
+        confirmLabel="Discard draft"
+        cancelLabel="Keep draft"
+        variant="warning"
+        onConfirm={() => {
+          setConfirmDiscard(false);
+          discardMutation.mutate({ platform });
+        }}
+        onCancel={() => setConfirmDiscard(false)}
       />
     </div>
   );

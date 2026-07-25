@@ -398,6 +398,9 @@ select.ra-in {
 .ra-add:disabled { opacity: .45; cursor: default; }
 .ra-empty { font-size: 12.5px; color: var(--text-3); padding: 4px 0 12px; line-height: 1.5; }
 .ra-line { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+/* Line-editor badges sit on the card surface, not a panel-2 item, so they need
+   the panel-2 fill to stay visible (prototype styles them this way inline). */
+.ra-line .ra-num { background: var(--panel-2); }
 
 /* ── Tier + validation ── */
 .ra-tier {
