@@ -1,4 +1,4 @@
-import { MobileAppVersionsManager } from '../components/MobileAppVersionsManager';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -12,8 +12,7 @@ const themeOptions: { value: ThemeOption; label: string; description: string }[]
 
 export default function Settings() {
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const { user, adminUser } = useAuth();
-  const adminEmail = user?.email ?? adminUser?.email ?? undefined;
+  const { isSuperAdmin } = useAuth();
 
   return (
     <div className="p-6">
@@ -67,10 +66,24 @@ export default function Settings() {
           </div>
         </div>
 
-        <MobileAppVersionsManager
-          requestingUserEmail={adminEmail}
-          updatedBy={adminEmail}
-        />
+        {isSuperAdmin() && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 max-w-2xl">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Mobile App Versions</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              The app update prompt — version gate, force/optional flags and the "What's New" content —
+              is now managed in the Release Manager, with a live phone preview and draft/publish flow.
+            </p>
+            <Link
+              to="/release-manager"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Open Release Manager
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

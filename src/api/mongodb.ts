@@ -13,8 +13,9 @@ import type {
   ClosedCompLeaderboard,
   AuditLog,
   ScoreType,
-  MobileAppVersionConfig,
-  UpdateMobileAppVersionConfigRequest,
+  ReleasePlatform,
+  ReleaseManagerPlatformResponse,
+  ReleaseManagerContentRequest,
 } from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository, IAuditLogRepository, GetAuditLogsParams } from './interfaces';
 
@@ -157,20 +158,40 @@ export async function getScoreTypes(): Promise<ScoreType[]> {
   return response.data;
 }
 
-export async function getMobileAppVersionConfig(requestingUserEmail: string): Promise<MobileAppVersionConfig> {
-  const response = await api.get<MobileAppVersionConfig>('/mobileAppVersionConfig', {
-    params: { requestingUserEmail },
-  });
+export async function getReleaseManagerConfig(
+  requestingUserEmail: string,
+  platform: ReleasePlatform,
+): Promise<ReleaseManagerPlatformResponse> {
+  const response = await api.get<ReleaseManagerPlatformResponse>(
+    `/mobileAppVersionConfig/admin/${platform}`,
+    { params: { requestingUserEmail } },
+  );
   return response.data;
 }
 
-export async function updateMobileAppVersionConfig(
+export async function saveReleaseManagerDraft(
   requestingUserEmail: string,
-  config: UpdateMobileAppVersionConfigRequest,
-): Promise<MobileAppVersionConfig> {
-  const response = await api.put<MobileAppVersionConfig>('/mobileAppVersionConfig', config, {
-    params: { requestingUserEmail },
-  });
+  platform: ReleasePlatform,
+  content: ReleaseManagerContentRequest,
+): Promise<ReleaseManagerPlatformResponse> {
+  const response = await api.put<ReleaseManagerPlatformResponse>(
+    `/mobileAppVersionConfig/admin/${platform}/draft`,
+    content,
+    { params: { requestingUserEmail } },
+  );
+  return response.data;
+}
+
+export async function publishReleaseManagerConfig(
+  requestingUserEmail: string,
+  platform: ReleasePlatform,
+  content: ReleaseManagerContentRequest,
+): Promise<ReleaseManagerPlatformResponse> {
+  const response = await api.put<ReleaseManagerPlatformResponse>(
+    `/mobileAppVersionConfig/admin/${platform}/publish`,
+    content,
+    { params: { requestingUserEmail } },
+  );
   return response.data;
 }
 

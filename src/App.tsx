@@ -18,6 +18,7 @@ import { ClosedCompDetail } from './pages/ClosedCompDetail';
 import { AuditLog } from './pages/AuditLog';
 import { Login } from './pages/Login';
 import Settings from './pages/Settings';
+import ReleaseManager from './pages/ReleaseManager';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import {
   cacheNamespace,
@@ -35,6 +36,7 @@ const allMenuItems = [
   { path: '/closed-comps', label: 'Closed Comps', feature: 'closed-comps' },
   { path: '/notifications', label: 'Notifications', feature: 'notifications' },
   { path: '/admin/users', label: 'Admin Users', feature: 'admin-users' },
+  { path: '/release-manager', label: 'Release Manager', superAdminOnly: true },
   { path: '/audit-log', label: 'Audit Log', superAdminOnly: true },
   { path: '/settings', label: 'Settings', alwaysShow: true },
 ];
@@ -277,6 +279,16 @@ function AppRoutes() {
           <ProtectedRoute requiredFeature="closed-comps">
             <Layout>
               <ClosedCompDetail />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/release-manager"
+        element={
+          <ProtectedRoute requireSuperAdmin>
+            <Layout>
+              <ReleaseManager />
             </Layout>
           </ProtectedRoute>
         }

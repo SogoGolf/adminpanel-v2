@@ -89,25 +89,43 @@ export interface ScoreType {
   name: string;
 }
 
+export interface MobileAppVersionFeature {
+  /** SF Symbol name (e.g. "flag.fill") — the string the mobile apps render. */
+  icon: string;
+  title: string;
+  detail: string;
+}
+
 export interface MobileAppVersionPlatformSettings {
   minimumRequiredVersion: string;
   optionalUpdatePromptEnabled: boolean;
   forceUpdateEnabled: boolean;
   updateMessage: string;
-}
-
-export interface MobileAppVersionConfig {
-  id: string;
-  versionString: string;
-  ios: MobileAppVersionPlatformSettings;
-  android: MobileAppVersionPlatformSettings;
+  features?: MobileAppVersionFeature[];
+  fixRows?: string[];
+  fixes?: string[];
+  footnote?: string;
   updatedAt?: string | null;
   updatedBy?: string;
 }
 
-export interface UpdateMobileAppVersionConfigRequest {
-  ios: MobileAppVersionPlatformSettings;
-  android: MobileAppVersionPlatformSettings;
+export type ReleasePlatform = 'ios' | 'android';
+
+export interface ReleaseManagerPlatformResponse {
+  platform: ReleasePlatform;
+  live: MobileAppVersionPlatformSettings;
+  draft: MobileAppVersionPlatformSettings | null;
+}
+
+export interface ReleaseManagerContentRequest {
+  minimumRequiredVersion: string;
+  forceUpdateEnabled: boolean;
+  optionalUpdatePromptEnabled: boolean;
+  updateMessage: string;
+  features?: MobileAppVersionFeature[];
+  fixRows?: string[];
+  fixes?: string[];
+  footnote?: string;
   updatedBy?: string;
 }
 
