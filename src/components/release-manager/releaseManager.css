@@ -208,7 +208,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) 452px;
   gap: 22px;
-  padding: 24px 0 60px;
+  padding: 36px 0 60px;
   align-items: start;
 }
 
