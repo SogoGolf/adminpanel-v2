@@ -111,10 +111,19 @@ export interface MobileAppVersionPlatformSettings {
 
 export type ReleasePlatform = 'ios' | 'android';
 
-export interface ReleaseManagerPlatformResponse {
-  platform: ReleasePlatform;
+/** Admin write target: one platform, or the same config applied to both atomically. */
+export type ReleaseTarget = ReleasePlatform | 'both';
+
+export interface ReleaseManagerPlatformState {
   live: MobileAppVersionPlatformSettings;
   draft: MobileAppVersionPlatformSettings | null;
+}
+
+export interface ReleaseManagerConfigResponse {
+  /** True when the last edit was made in shared (both-platforms) mode. */
+  sharedNotes: boolean;
+  ios: ReleaseManagerPlatformState;
+  android: ReleaseManagerPlatformState;
 }
 
 export interface ReleaseManagerContentRequest {

@@ -13,8 +13,8 @@ import type {
   ClosedCompLeaderboard,
   AuditLog,
   ScoreType,
-  ReleasePlatform,
-  ReleaseManagerPlatformResponse,
+  ReleaseTarget,
+  ReleaseManagerConfigResponse,
   ReleaseManagerContentRequest,
 } from '../types';
 import type { IApiClient, IGolferRepository, ITransactionRepository, IAuditLogRepository, GetAuditLogsParams } from './interfaces';
@@ -160,10 +160,9 @@ export async function getScoreTypes(): Promise<ScoreType[]> {
 
 export async function getReleaseManagerConfig(
   requestingUserEmail: string,
-  platform: ReleasePlatform,
-): Promise<ReleaseManagerPlatformResponse> {
-  const response = await api.get<ReleaseManagerPlatformResponse>(
-    `/mobileAppVersionConfig/admin/${platform}`,
+): Promise<ReleaseManagerConfigResponse> {
+  const response = await api.get<ReleaseManagerConfigResponse>(
+    '/mobileAppVersionConfig/admin',
     { params: { requestingUserEmail } },
   );
   return response.data;
@@ -171,11 +170,11 @@ export async function getReleaseManagerConfig(
 
 export async function saveReleaseManagerDraft(
   requestingUserEmail: string,
-  platform: ReleasePlatform,
+  target: ReleaseTarget,
   content: ReleaseManagerContentRequest,
-): Promise<ReleaseManagerPlatformResponse> {
-  const response = await api.put<ReleaseManagerPlatformResponse>(
-    `/mobileAppVersionConfig/admin/${platform}/draft`,
+): Promise<ReleaseManagerConfigResponse> {
+  const response = await api.put<ReleaseManagerConfigResponse>(
+    `/mobileAppVersionConfig/admin/${target}/draft`,
     content,
     { params: { requestingUserEmail } },
   );
@@ -184,11 +183,11 @@ export async function saveReleaseManagerDraft(
 
 export async function publishReleaseManagerConfig(
   requestingUserEmail: string,
-  platform: ReleasePlatform,
+  target: ReleaseTarget,
   content: ReleaseManagerContentRequest,
-): Promise<ReleaseManagerPlatformResponse> {
-  const response = await api.put<ReleaseManagerPlatformResponse>(
-    `/mobileAppVersionConfig/admin/${platform}/publish`,
+): Promise<ReleaseManagerConfigResponse> {
+  const response = await api.put<ReleaseManagerConfigResponse>(
+    `/mobileAppVersionConfig/admin/${target}/publish`,
     content,
     { params: { requestingUserEmail } },
   );
@@ -197,10 +196,10 @@ export async function publishReleaseManagerConfig(
 
 export async function discardReleaseManagerDraft(
   requestingUserEmail: string,
-  platform: ReleasePlatform,
-): Promise<ReleaseManagerPlatformResponse> {
-  const response = await api.delete<ReleaseManagerPlatformResponse>(
-    `/mobileAppVersionConfig/admin/${platform}/draft`,
+  target: ReleaseTarget,
+): Promise<ReleaseManagerConfigResponse> {
+  const response = await api.delete<ReleaseManagerConfigResponse>(
+    `/mobileAppVersionConfig/admin/${target}/draft`,
     { params: { requestingUserEmail } },
   );
   return response.data;

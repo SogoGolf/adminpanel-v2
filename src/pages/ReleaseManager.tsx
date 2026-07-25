@@ -11,8 +11,10 @@ import {
 } from '../api/mongodb';
 import type {
   MobileAppVersionPlatformSettings,
+  ReleaseManagerConfigResponse,
   ReleaseManagerContentRequest,
-  ReleasePlatform,
+  ReleaseManagerPlatformState,
+  ReleaseTarget,
 } from '../types';
 import {
   FEATURE_ICONS,
@@ -343,37 +345,63 @@ export default function ReleaseManager() {
   const queryClient = useQueryClient();
   const adminEmail = user?.email ?? adminUser?.email ?? '';
 
-  const [platform, setPlatform] = useState<ReleasePlatform>('ios');
+  const [target, setTarget] = useState<ReleaseTarget>('both');
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [saved, setSaved] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
-  const [pendingPlatform, setPendingPlatform] = useState<ReleasePlatform | null>(null);
+  const [pendingTarget, setPendingTarget] = useState<ReleaseTarget | null>(null);
   const [confirmPublish, setConfirmPublish] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const hydratedSigRef = useRef<string>(JSON.stringify(EMPTY_FORM));
   const pendingHydrateRef = useRef(true);
-  const platformRef = useRef(platform);
-  platformRef.current = platform;
+  const targetSeededRef = useRef(false);
+  const targetRef = useRef(target);
+  targetRef.current = target;
 
-  const queryKey = ['releaseManagerConfig', platform, adminEmail];
+  const queryKey = ['releaseManagerConfig', adminEmail];
   const { data, isLoading, error: loadError, refetch } = useQuery({
     queryKey,
-    queryFn: () => getReleaseManagerConfig(adminEmail, platform),
+    queryFn: () => getReleaseManagerConfig(adminEmail),
     enabled: Boolean(adminEmail),
     // This form edits a production kill switch — never trust a cached copy.
     staleTime: 0,
     refetchOnMount: 'always',
   });
 
+  // In "both" mode the iOS side is the canonical source; a divergence notice
+  // covers the case where the two platforms currently differ.
+  const sideOf = (response: ReleaseManagerConfigResponse, t: ReleaseTarget): ReleaseManagerPlatformState =>
+    t === 'android' ? response.android : response.ios;
+
+  // Open in the mode the config was last edited in.
+  useEffect(() => {
+    if (!data || targetSeededRef.current) return;
+    targetSeededRef.current = true;
+    if (!data.sharedNotes) {
+      pendingHydrateRef.current = true;
+      setTarget('ios');
+    }
+  }, [data]);
+
   const sig = JSON.stringify(form);
   const isDirty = sig !== hydratedSigRef.current;
-  const draftExists = Boolean(data?.draft);
+  const draftExists = target === 'both'
+    ? Boolean(data?.ios.draft || data?.android.draft)
+    : Boolean(data && sideOf(data, target).draft);
+
+  const diverged = useMemo(() => {
+    if (!data || target !== 'both') return false;
+    const iosForm = settingsToForm(data.ios.draft ?? data.ios.live);
+    const androidForm = settingsToForm(data.android.draft ?? data.android.live);
+    return JSON.stringify(iosForm) !== JSON.stringify(androidForm);
+  }, [data, target]);
 
   useEffect(() => {
     if (!data) return;
-    const next = settingsToForm(data.draft ?? data.live);
+    const side = sideOf(data, target);
+    const next = settingsToForm(side.draft ?? side.live);
     const nextSig = JSON.stringify(next);
     if (!pendingHydrateRef.current) {
       // Never clobber in-progress edits; once the form is clean again, a
@@ -384,7 +412,8 @@ export default function ReleaseManager() {
     hydratedSigRef.current = nextSig;
     pendingHydrateRef.current = false;
     setForm(next);
-  }, [data, sig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, sig, target]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -404,7 +433,7 @@ export default function ReleaseManager() {
 
   const payload = useMemo(() => {
     const o: Record<string, unknown> = {
-      platform,
+      platform: target,
       minimumRequiredVersion: form.minimumRequiredVersion,
       forceUpdateEnabled: form.forceUpdateEnabled,
       optionalUpdatePromptEnabled: form.optionalUpdatePromptEnabled,
@@ -417,75 +446,74 @@ export default function ReleaseManager() {
     if (form.fixes.length) o.fixes = form.fixes;
     if (form.footnote.trim()) o.footnote = form.footnote;
     return o;
-  }, [form, platform]);
+  }, [form, target]);
 
-  const platformLabel = platform === 'ios' ? 'iOS' : 'Android';
-  const labelOf = (p: ReleasePlatform) => (p === 'ios' ? 'iOS' : 'Android');
+  const targetLabel = target === 'both' ? 'iOS + Android' : target === 'ios' ? 'iOS' : 'Android';
+  const labelOf = (t: ReleaseTarget) => (t === 'both' ? 'iOS + Android' : t === 'ios' ? 'iOS' : 'Android');
 
-  // The response's own platform keys the cache write, and UI state is only
-  // touched when that platform is still the one on screen — a slow response
-  // arriving after a platform switch can't poison the other platform's cache.
+  // The mutation's own target travels as variables — a slow response resolving
+  // after a mode switch updates the (single) cache correctly but never applies
+  // form/flash state for a mode that's no longer on screen.
   interface MutationVars {
-    platform: ReleasePlatform;
+    target: ReleaseTarget;
     content: ReleaseManagerContentRequest;
   }
 
   const applyResponse = (
-    response: Awaited<ReturnType<typeof getReleaseManagerConfig>>,
+    response: ReleaseManagerConfigResponse,
+    vars: { target: ReleaseTarget },
     flash: string,
     source: 'draft' | 'live',
   ) => {
-    queryClient.setQueryData(['releaseManagerConfig', response.platform, adminEmail], response);
-    if (response.platform !== platformRef.current) return;
-    const next = settingsToForm(source === 'draft' ? response.draft ?? response.live : response.live);
+    queryClient.setQueryData(queryKey, response);
+    if (vars.target !== targetRef.current) return;
+    const side = sideOf(response, vars.target);
+    const next = settingsToForm(source === 'draft' ? side.draft ?? side.live : side.live);
     hydratedSigRef.current = JSON.stringify(next);
     setForm(next);
     setSaved(flash);
     setSaveError(null);
   };
 
-  const mutationError = (error: unknown, vars: MutationVars) => {
-    if (vars.platform !== platformRef.current) return;
+  const mutationError = (error: unknown, vars: { target: ReleaseTarget }) => {
+    if (vars.target !== targetRef.current) return;
     setSaveError(serverErrorMessage(error));
   };
 
   const draftMutation = useMutation({
-    mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(adminEmail, vars.platform, vars.content),
-    onSuccess: (response) => applyResponse(response, 'Draft saved', 'draft'),
+    mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(adminEmail, vars.target, vars.content),
+    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft saved', 'draft'),
     onError: mutationError,
   });
 
   const publishMutation = useMutation({
-    mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(adminEmail, vars.platform, vars.content),
-    onSuccess: (response) => applyResponse(response, `Published to ${labelOf(response.platform)}`, 'live'),
+    mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(adminEmail, vars.target, vars.content),
+    onSuccess: (response, vars) => applyResponse(response, vars, `Published to ${labelOf(vars.target)}`, 'live'),
     onError: mutationError,
   });
 
   const discardMutation = useMutation({
-    mutationFn: (vars: { platform: ReleasePlatform }) => discardReleaseManagerDraft(adminEmail, vars.platform),
-    onSuccess: (response) => applyResponse(response, 'Draft discarded', 'live'),
-    onError: (error, vars) => {
-      if (vars.platform !== platformRef.current) return;
-      setSaveError(serverErrorMessage(error));
-    },
+    mutationFn: (vars: { target: ReleaseTarget }) => discardReleaseManagerDraft(adminEmail, vars.target),
+    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft discarded', 'live'),
+    onError: mutationError,
   });
 
   const busy = draftMutation.isPending || publishMutation.isPending || discardMutation.isPending;
 
-  const requestPlatformSwitch = (next: ReleasePlatform) => {
-    if (next === platform) return;
+  const requestTargetSwitch = (next: ReleaseTarget) => {
+    if (next === target) return;
     if (isDirty) {
-      setPendingPlatform(next);
+      setPendingTarget(next);
     } else {
-      switchPlatform(next);
+      switchTarget(next);
     }
   };
 
-  const switchPlatform = (next: ReleasePlatform) => {
+  const switchTarget = (next: ReleaseTarget) => {
     pendingHydrateRef.current = true;
     hydratedSigRef.current = JSON.stringify(EMPTY_FORM);
     setForm(EMPTY_FORM);
-    setPlatform(next);
+    setTarget(next);
     setSaved(null);
     setSaveError(null);
   };
@@ -495,16 +523,24 @@ export default function ReleaseManager() {
     if (form.forceUpdateEnabled) {
       setConfirmPublish(true);
     } else {
-      publishMutation.mutate({ platform, content: formToContent(form, adminEmail) });
+      publishMutation.mutate({ target, content: formToContent(form, adminEmail) });
     }
   };
 
-  const lastPublished = formatAuditDate(data?.live.updatedAt);
+  const auditSide = data ? sideOf(data, target) : null;
+  const lastPublished = formatAuditDate(auditSide?.live.updatedAt);
   const auditLine = lastPublished
-    ? `Last published ${lastPublished} by ${data?.live.updatedBy || 'unknown'}`
+    ? `Last published ${lastPublished} by ${auditSide?.live.updatedBy || 'unknown'}`
     : 'Not published from this screen yet';
 
   const configReady = !isLoading && !loadError && Boolean(data);
+  const liveNow = !data
+    ? '—'
+    : target === 'both'
+      ? data.ios.live.minimumRequiredVersion === data.android.live.minimumRequiredVersion
+        ? data.ios.live.minimumRequiredVersion || '—'
+        : `${data.ios.live.minimumRequiredVersion || '—'} · ${data.android.live.minimumRequiredVersion || '—'}`
+      : sideOf(data, target).live.minimumRequiredVersion || '—';
   const previewVersion = form.minimumRequiredVersion || '—';
   const mode = form.forceUpdateEnabled ? 'Forced' : form.optionalUpdatePromptEnabled ? 'Optional' : 'Off';
 
@@ -533,7 +569,7 @@ export default function ReleaseManager() {
             <div className="ra-live">
               <div>
                 <div className="k">Live now</div>
-                <div className="v num">{data?.live.minimumRequiredVersion || '—'}</div>
+                <div className="v num">{liveNow}</div>
               </div>
               <div>
                 <div className="k">Editing</div>
@@ -562,7 +598,7 @@ export default function ReleaseManager() {
             <div className="ra-card">
               <div className="bd">
                 <div className="ra-val bad">
-                  <strong>Couldn't load the {platformLabel} config</strong>
+                  <strong>Couldn't load the app update config</strong>
                   <ul><li>{serverErrorMessage(loadError)}</li></ul>
                 </div>
                 <div style={{ paddingTop: 12 }}>
@@ -579,12 +615,13 @@ export default function ReleaseManager() {
                     <Field label="Platform">
                       <select
                         className="ra-in"
-                        value={platform}
+                        value={target}
                         disabled={busy}
-                        onChange={(e) => requestPlatformSwitch(e.target.value as ReleasePlatform)}
+                        onChange={(e) => requestTargetSwitch(e.target.value as ReleaseTarget)}
                       >
-                        <option value="ios">iOS</option>
-                        <option value="android">Android</option>
+                        <option value="both">Both platforms</option>
+                        <option value="ios">iOS only</option>
+                        <option value="android">Android only</option>
                       </select>
                     </Field>
                     <Field label="Minimum required version">
@@ -680,9 +717,15 @@ export default function ReleaseManager() {
 
               <div className="ra-card">
                 <div className="bd">
+                  {diverged && (
+                    <div className="ra-val draft">
+                      <strong>iOS and Android currently differ</strong> — the form shows the iOS values.
+                      Saving or publishing in Both mode applies this form to both platforms.
+                    </div>
+                  )}
                   {draftExists && (
                     <div className="ra-val draft">
-                      <strong>Unpublished draft</strong> — this form shows staged {platformLabel} changes that are not live.
+                      <strong>Unpublished draft</strong> — this form shows staged {targetLabel} changes that are not live.
                       Publish to make them live.
                     </div>
                   )}
@@ -723,7 +766,7 @@ export default function ReleaseManager() {
                   <button
                     type="button"
                     className="btn ghost"
-                    onClick={() => draftMutation.mutate({ platform, content: formToContent(form, adminEmail) })}
+                    onClick={() => draftMutation.mutate({ target, content: formToContent(form, adminEmail) })}
                     disabled={busy}
                   >
                     {draftMutation.isPending ? 'Saving…' : 'Save draft'}
@@ -839,43 +882,47 @@ export default function ReleaseManager() {
       </div>
 
       <ConfirmDialog
-        open={pendingPlatform !== null}
+        open={pendingTarget !== null}
         title="Discard unsaved changes?"
-        message={`You have unsaved ${platformLabel} changes. Switching platform will discard them.`}
+        message={`You have unsaved ${targetLabel} changes. Switching edit mode will discard them.`}
         confirmLabel="Discard and switch"
         cancelLabel="Keep editing"
         variant="warning"
         onConfirm={() => {
-          if (pendingPlatform) switchPlatform(pendingPlatform);
-          setPendingPlatform(null);
+          if (pendingTarget) switchTarget(pendingTarget);
+          setPendingTarget(null);
         }}
-        onCancel={() => setPendingPlatform(null)}
+        onCancel={() => setPendingTarget(null)}
       />
 
       <ConfirmDialog
         open={confirmPublish}
-        title={`Force update — ${platformLabel}`}
-        message={`This publishes with force update ON. Every golfer on a ${platformLabel} build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update. Publish?`}
-        confirmLabel={`Publish to ${platformLabel}`}
+        title={`Force update — ${targetLabel}`}
+        message={target === 'both'
+          ? `This publishes with force update ON. Every golfer on an iOS or Android build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update. Publish to both platforms?`
+          : `This publishes with force update ON. Every golfer on a ${targetLabel} build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update. Publish?`}
+        confirmLabel={`Publish to ${targetLabel}`}
         cancelLabel="Cancel"
         variant="danger"
         onConfirm={() => {
           setConfirmPublish(false);
-          publishMutation.mutate({ platform, content: formToContent(form, adminEmail) });
+          publishMutation.mutate({ target, content: formToContent(form, adminEmail) });
         }}
         onCancel={() => setConfirmPublish(false)}
       />
 
       <ConfirmDialog
         open={confirmDiscard}
-        title={`Discard ${platformLabel} draft?`}
-        message={`This deletes the staged ${platformLabel} draft and reverts the form to the live values. The live config golfers see is not affected.`}
+        title={`Discard ${targetLabel} draft?`}
+        message={target === 'both'
+          ? 'This deletes the staged drafts on both platforms and reverts the form to the live values. The live config golfers see is not affected.'
+          : `This deletes the staged ${targetLabel} draft and reverts the form to the live values. The live config golfers see is not affected.`}
         confirmLabel="Discard draft"
         cancelLabel="Keep draft"
         variant="warning"
         onConfirm={() => {
           setConfirmDiscard(false);
-          discardMutation.mutate({ platform });
+          discardMutation.mutate({ target });
         }}
         onCancel={() => setConfirmDiscard(false)}
       />
