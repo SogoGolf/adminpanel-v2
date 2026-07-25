@@ -128,6 +128,8 @@ export interface ReleaseManagerConfigResponse {
 
 export interface ReleaseManagerContentRequest {
   minimumRequiredVersion: string;
+  /** Only sent with the 'both' target: Android may gate on a slightly diverged version number. */
+  androidMinimumRequiredVersion?: string;
   forceUpdateEnabled: boolean;
   optionalUpdatePromptEnabled: boolean;
   updateMessage: string;

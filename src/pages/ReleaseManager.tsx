@@ -40,6 +40,8 @@ interface FormFeature {
 
 interface FormState {
   minimumRequiredVersion: string;
+  /** Only used in Both mode: Android can gate on a slightly diverged version number. */
+  androidMinimumRequiredVersion: string;
   forceUpdateEnabled: boolean;
   optionalUpdatePromptEnabled: boolean;
   updateMessage: string;
@@ -51,6 +53,7 @@ interface FormState {
 
 const EMPTY_FORM: FormState = {
   minimumRequiredVersion: '',
+  androidMinimumRequiredVersion: '',
   forceUpdateEnabled: false,
   optionalUpdatePromptEnabled: false,
   updateMessage: '',
@@ -64,6 +67,7 @@ function settingsToForm(settings: MobileAppVersionPlatformSettings | null | unde
   if (!settings) return EMPTY_FORM;
   return {
     minimumRequiredVersion: settings.minimumRequiredVersion ?? '',
+    androidMinimumRequiredVersion: '',
     forceUpdateEnabled: Boolean(settings.forceUpdateEnabled),
     optionalUpdatePromptEnabled: Boolean(settings.optionalUpdatePromptEnabled),
     updateMessage: settings.updateMessage ?? '',
@@ -82,7 +86,7 @@ function settingsToForm(settings: MobileAppVersionPlatformSettings | null | unde
   };
 }
 
-function formToContent(form: FormState, updatedBy?: string): ReleaseManagerContentRequest {
+function formToContent(form: FormState, updatedBy: string | undefined, target: ReleaseTarget): ReleaseManagerContentRequest {
   const content: ReleaseManagerContentRequest = {
     minimumRequiredVersion: form.minimumRequiredVersion.trim(),
     forceUpdateEnabled: form.forceUpdateEnabled,
@@ -90,6 +94,9 @@ function formToContent(form: FormState, updatedBy?: string): ReleaseManagerConte
     updateMessage: form.updateMessage.trim(),
     updatedBy,
   };
+  if (target === 'both') {
+    content.androidMinimumRequiredVersion = form.androidMinimumRequiredVersion.trim();
+  }
   if (form.features.length) {
     content.features = form.features.map((f) => ({
       icon: f.rawIcon ?? ICON_TO_SF[f.icon],
@@ -103,10 +110,15 @@ function formToContent(form: FormState, updatedBy?: string): ReleaseManagerConte
   return content;
 }
 
-function validate(c: FormState): { errs: string[]; warns: string[] } {
+function validate(c: FormState, target: ReleaseTarget): { errs: string[]; warns: string[] } {
   const errs: string[] = [];
   const warns: string[] = [];
-  if (!VERSION_RE.test(c.minimumRequiredVersion)) errs.push('Minimum version must look like 2.4.0');
+  if (target === 'both') {
+    if (!VERSION_RE.test(c.minimumRequiredVersion)) errs.push('iOS minimum version must look like 2.4.0');
+    if (!VERSION_RE.test(c.androidMinimumRequiredVersion)) errs.push('Android minimum version must look like 2.4.0');
+  } else if (!VERSION_RE.test(c.minimumRequiredVersion)) {
+    errs.push('Minimum version must look like 2.4.0');
+  }
   if (c.forceUpdateEnabled && c.optionalUpdatePromptEnabled)
     warns.push("Force update wins — the optional prompt never shows while it's on");
   if (!c.forceUpdateEnabled && !c.optionalUpdatePromptEnabled)
@@ -370,18 +382,34 @@ export default function ReleaseManager() {
     refetchOnMount: 'always',
   });
 
-  // In "both" mode the iOS side is the canonical source; a divergence notice
-  // covers the case where the two platforms currently differ.
   const sideOf = (response: ReleaseManagerConfigResponse, t: ReleaseTarget): ReleaseManagerPlatformState =>
     t === 'android' ? response.android : response.ios;
 
-  // Open in the mode the config was last edited in.
+  // Both mode: shared notes come from whichever side has staged content (so a
+  // one-sided draft is always visible), each platform keeps its own version.
+  const formFromConfig = (response: ReleaseManagerConfigResponse, t: ReleaseTarget): FormState => {
+    if (t !== 'both') {
+      const side = sideOf(response, t);
+      return settingsToForm(side.draft ?? side.live);
+    }
+    const iosSource = response.ios.draft ?? response.ios.live;
+    const androidSource = response.android.draft ?? response.android.live;
+    const notesSource = !response.ios.draft && response.android.draft ? androidSource : iosSource;
+    return {
+      ...settingsToForm(notesSource),
+      minimumRequiredVersion: iosSource.minimumRequiredVersion ?? '',
+      androidMinimumRequiredVersion: androidSource.minimumRequiredVersion ?? '',
+    };
+  };
+
+  // Open in the mode the config was last edited in. When that was a single
+  // platform, prefer the side holding a staged draft so it stays visible.
   useEffect(() => {
     if (!data || targetSeededRef.current) return;
     targetSeededRef.current = true;
     if (!data.sharedNotes) {
       pendingHydrateRef.current = true;
-      setTarget('ios');
+      setTarget(data.android.draft && !data.ios.draft ? 'android' : 'ios');
     }
   }, [data]);
 
@@ -390,18 +418,21 @@ export default function ReleaseManager() {
   const draftExists = target === 'both'
     ? Boolean(data?.ios.draft || data?.android.draft)
     : Boolean(data && sideOf(data, target).draft);
+  const notesFromAndroid = target === 'both' && Boolean(data && !data.ios.draft && data.android.draft);
 
+  // Divergence compares the SHARED fields only — the two platforms may
+  // legitimately gate on slightly different version numbers.
   const diverged = useMemo(() => {
     if (!data || target !== 'both') return false;
-    const iosForm = settingsToForm(data.ios.draft ?? data.ios.live);
-    const androidForm = settingsToForm(data.android.draft ?? data.android.live);
+    const stripVersions = (f: FormState) => ({ ...f, minimumRequiredVersion: '', androidMinimumRequiredVersion: '' });
+    const iosForm = stripVersions(settingsToForm(data.ios.draft ?? data.ios.live));
+    const androidForm = stripVersions(settingsToForm(data.android.draft ?? data.android.live));
     return JSON.stringify(iosForm) !== JSON.stringify(androidForm);
   }, [data, target]);
 
   useEffect(() => {
     if (!data) return;
-    const side = sideOf(data, target);
-    const next = settingsToForm(side.draft ?? side.live);
+    const next = formFromConfig(data, target);
     const nextSig = JSON.stringify(next);
     if (!pendingHydrateRef.current) {
       // Never clobber in-progress edits; once the form is clean again, a
@@ -421,7 +452,7 @@ export default function ReleaseManager() {
     setSaveError(null);
   };
 
-  const { errs, warns } = useMemo(() => validate(form), [form]);
+  const { errs, warns } = useMemo(() => validate(form, target), [form, target]);
   const tier = tierOf(form);
   const headline = form.features.length
     ? "What's New"
@@ -435,12 +466,13 @@ export default function ReleaseManager() {
     const o: Record<string, unknown> = {
       platform: target,
       minimumRequiredVersion: form.minimumRequiredVersion,
-      forceUpdateEnabled: form.forceUpdateEnabled,
-      optionalUpdatePromptEnabled: form.optionalUpdatePromptEnabled,
-      updateMessage: form.updateMessage,
     };
+    if (target === 'both') o.androidMinimumRequiredVersion = form.androidMinimumRequiredVersion;
+    o.forceUpdateEnabled = form.forceUpdateEnabled;
+    o.optionalUpdatePromptEnabled = form.optionalUpdatePromptEnabled;
+    o.updateMessage = form.updateMessage;
     if (form.features.length) {
-      o.features = form.features.map((f) => ({ icon: ICON_TO_SF[f.icon], title: f.title, detail: f.detail }));
+      o.features = form.features.map((f) => ({ icon: f.rawIcon ?? ICON_TO_SF[f.icon], title: f.title, detail: f.detail }));
     }
     if (form.fixRows.length) o.fixRows = form.fixRows;
     if (form.fixes.length) o.fixes = form.fixes;
@@ -463,12 +495,10 @@ export default function ReleaseManager() {
     response: ReleaseManagerConfigResponse,
     vars: { target: ReleaseTarget },
     flash: string,
-    source: 'draft' | 'live',
   ) => {
     queryClient.setQueryData(queryKey, response);
     if (vars.target !== targetRef.current) return;
-    const side = sideOf(response, vars.target);
-    const next = settingsToForm(source === 'draft' ? side.draft ?? side.live : side.live);
+    const next = formFromConfig(response, vars.target);
     hydratedSigRef.current = JSON.stringify(next);
     setForm(next);
     setSaved(flash);
@@ -482,19 +512,19 @@ export default function ReleaseManager() {
 
   const draftMutation = useMutation({
     mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(adminEmail, vars.target, vars.content),
-    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft saved', 'draft'),
+    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft saved'),
     onError: mutationError,
   });
 
   const publishMutation = useMutation({
     mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(adminEmail, vars.target, vars.content),
-    onSuccess: (response, vars) => applyResponse(response, vars, `Published to ${labelOf(vars.target)}`, 'live'),
+    onSuccess: (response, vars) => applyResponse(response, vars, `Published to ${labelOf(vars.target)}`),
     onError: mutationError,
   });
 
   const discardMutation = useMutation({
     mutationFn: (vars: { target: ReleaseTarget }) => discardReleaseManagerDraft(adminEmail, vars.target),
-    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft discarded', 'live'),
+    onSuccess: (response, vars) => applyResponse(response, vars, 'Draft discarded'),
     onError: mutationError,
   });
 
@@ -520,17 +550,29 @@ export default function ReleaseManager() {
 
   const startPublish = () => {
     if (errs.length || busy) return;
-    if (form.forceUpdateEnabled) {
+    // Confirm anything hard to undo: force update, or a Both-mode publish
+    // that would flatten currently-differing platform content.
+    if (form.forceUpdateEnabled || (target === 'both' && diverged)) {
       setConfirmPublish(true);
     } else {
-      publishMutation.mutate({ target, content: formToContent(form, adminEmail) });
+      publishMutation.mutate({ target, content: formToContent(form, adminEmail, target) });
     }
   };
 
-  const auditSide = data ? sideOf(data, target) : null;
-  const lastPublished = formatAuditDate(auditSide?.live.updatedAt);
+  // In Both mode show the most recent publish of either platform, tagged when
+  // the two sides' stamps differ.
+  const auditLive = (() => {
+    if (!data) return null;
+    if (target !== 'both') return { live: sideOf(data, target).live, tag: '' };
+    const iosTime = Date.parse(data.ios.live.updatedAt ?? '') || 0;
+    const androidTime = Date.parse(data.android.live.updatedAt ?? '') || 0;
+    const newer = androidTime > iosTime ? data.android.live : data.ios.live;
+    const tag = iosTime !== androidTime ? (androidTime > iosTime ? ' (Android)' : ' (iOS)') : '';
+    return { live: newer, tag };
+  })();
+  const lastPublished = formatAuditDate(auditLive?.live.updatedAt);
   const auditLine = lastPublished
-    ? `Last published ${lastPublished} by ${auditSide?.live.updatedBy || 'unknown'}`
+    ? `Last published ${lastPublished} by ${auditLive?.live.updatedBy || 'unknown'}${auditLive?.tag ?? ''}`
     : 'Not published from this screen yet';
 
   const configReady = !isLoading && !loadError && Boolean(data);
@@ -573,7 +615,13 @@ export default function ReleaseManager() {
               </div>
               <div>
                 <div className="k">Editing</div>
-                <div className="v num">{configReady ? form.minimumRequiredVersion || '—' : '—'}</div>
+                <div className="v num">
+                  {!configReady
+                    ? '—'
+                    : target === 'both' && form.minimumRequiredVersion !== form.androidMinimumRequiredVersion
+                      ? `${form.minimumRequiredVersion || '—'} · ${form.androidMinimumRequiredVersion || '—'}`
+                      : form.minimumRequiredVersion || '—'}
+                </div>
               </div>
               <div>
                 <div className="k">Mode</div>
@@ -624,14 +672,24 @@ export default function ReleaseManager() {
                         <option value="android">Android only</option>
                       </select>
                     </Field>
-                    <Field label="Minimum required version">
+                    <Field label={target === 'both' ? 'Minimum version — iOS' : 'Minimum required version'}>
                       <input
                         className={'ra-in mono' + (VERSION_RE.test(form.minimumRequiredVersion) ? '' : ' err')}
                         value={form.minimumRequiredVersion}
                         onChange={(e) => set('minimumRequiredVersion', e.target.value)}
-                        placeholder="2.4.0"
+                        placeholder={target === 'both' ? '3.3.1' : '2.4.0'}
                       />
                     </Field>
+                    {target === 'both' && (
+                      <Field label="Minimum version — Android">
+                        <input
+                          className={'ra-in mono' + (VERSION_RE.test(form.androidMinimumRequiredVersion) ? '' : ' err')}
+                          value={form.androidMinimumRequiredVersion}
+                          onChange={(e) => set('androidMinimumRequiredVersion', e.target.value)}
+                          placeholder="3.3.2"
+                        />
+                      </Field>
+                    )}
                   </div>
                   <SwitchRow
                     on={form.forceUpdateEnabled}
@@ -719,8 +777,9 @@ export default function ReleaseManager() {
                 <div className="bd">
                   {diverged && (
                     <div className="ra-val draft">
-                      <strong>iOS and Android currently differ</strong> — the form shows the iOS values.
-                      Saving or publishing in Both mode applies this form to both platforms.
+                      <strong>iOS and Android notes currently differ</strong> — the form shows
+                      the {notesFromAndroid ? 'Android' : 'iOS'} values. Saving or publishing in Both mode
+                      applies this form to both platforms.
                     </div>
                   )}
                   {draftExists && (
@@ -766,7 +825,7 @@ export default function ReleaseManager() {
                   <button
                     type="button"
                     className="btn ghost"
-                    onClick={() => draftMutation.mutate({ target, content: formToContent(form, adminEmail) })}
+                    onClick={() => draftMutation.mutate({ target, content: formToContent(form, adminEmail, target) })}
                     disabled={busy}
                   >
                     {draftMutation.isPending ? 'Saving…' : 'Save draft'}
@@ -897,16 +956,24 @@ export default function ReleaseManager() {
 
       <ConfirmDialog
         open={confirmPublish}
-        title={`Force update — ${targetLabel}`}
-        message={target === 'both'
-          ? `This publishes with force update ON. Every golfer on an iOS or Android build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update. Publish to both platforms?`
-          : `This publishes with force update ON. Every golfer on a ${targetLabel} build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update. Publish?`}
+        title={form.forceUpdateEnabled ? `Force update — ${targetLabel}` : 'Overwrite both platforms?'}
+        message={[
+          form.forceUpdateEnabled
+            ? target === 'both'
+              ? `This publishes with force update ON. Every golfer on an iOS build older than ${form.minimumRequiredVersion || '?'} or an Android build older than ${form.androidMinimumRequiredVersion || '?'} will be locked out of the app until they update.`
+              : `This publishes with force update ON. Every golfer on a ${targetLabel} build older than ${form.minimumRequiredVersion || '?'} will be locked out of the app until they update.`
+            : '',
+          target === 'both' && diverged
+            ? 'iOS and Android currently have different content — publishing replaces both platforms with this form.'
+            : '',
+          'Publish?',
+        ].filter(Boolean).join(' ')}
         confirmLabel={`Publish to ${targetLabel}`}
         cancelLabel="Cancel"
         variant="danger"
         onConfirm={() => {
           setConfirmPublish(false);
-          publishMutation.mutate({ target, content: formToContent(form, adminEmail) });
+          publishMutation.mutate({ target, content: formToContent(form, adminEmail, target) });
         }}
         onCancel={() => setConfirmPublish(false)}
       />
