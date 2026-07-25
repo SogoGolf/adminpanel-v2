@@ -37,10 +37,7 @@ function cloneConfig(config: MobileAppVersionConfig): MobileAppVersionConfig {
   return {
     ...config,
     ios: { ...config.ios },
-    android: {
-      ...config.android,
-      optionalUpdatePromptEnabled: false,
-    },
+    android: { ...config.android },
   };
 }
 
@@ -72,8 +69,7 @@ function validateConfig(config: MobileAppVersionConfig): string | null {
     }
 
     const requiresMinimumVersion =
-      settings.forceUpdateEnabled ||
-      (platform === 'ios' && settings.optionalUpdatePromptEnabled);
+      settings.forceUpdateEnabled || settings.optionalUpdatePromptEnabled;
 
     if (requiresMinimumVersion && !settings.minimumRequiredVersion.trim()) {
       return `${label} minimum required version is required when an update prompt is enabled`;
@@ -260,7 +256,7 @@ export function MobileAppVersionsManager({
             Set the minimum supported versions for the native apps and choose whether updates are optional or required.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            iOS supports optional prompts and force updates. Android uses Google Play flexible updates by default and switches to immediate updates when force update is enabled.
+          Both platforms support optional prompts and force updates. When an optional prompt is shown, users can tap "Later" to dismiss it until the minimum version moves to a new major or minor version.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             iOS optional prompts are remembered on-device when a user taps Later. They reappear once the minimum version moves to a new major or minor version, for example 3.3.x to 3.4.x or 4.0.x.
@@ -328,17 +324,15 @@ function PlatformVersionCard({
     <section className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
       <div className="flex items-center justify-between gap-4 mb-4">
         <h3 className="font-medium text-gray-900 dark:text-white">{label}</h3>
-        {platform === 'ios' && (
-          <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-            <input
-              type="checkbox"
-              checked={settings.optionalUpdatePromptEnabled}
-              onChange={(event) => onChange('optionalUpdatePromptEnabled', event.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            Optional prompt
-          </label>
-        )}
+        <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <input
+            type="checkbox"
+            checked={settings.optionalUpdatePromptEnabled}
+            onChange={(event) => onChange('optionalUpdatePromptEnabled', event.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          Optional prompt
+        </label>
         <label className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
           <input
             type="checkbox"
