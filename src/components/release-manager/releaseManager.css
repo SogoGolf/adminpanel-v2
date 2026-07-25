@@ -204,11 +204,14 @@
 .ra-live .v.on { color: var(--yellow); }
 
 /* ── Body grid ── */
-.ra-main {
+/* .rm-scope prefix needed: this shares the element with .wrap, and
+   .rm-scope .wrap would otherwise out-rank a bare .ra-main and zero the
+   vertical padding. Horizontal 24px restated for the same reason. */
+.rm-scope .ra-main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 452px;
   gap: 22px;
-  padding: 36px 0 60px;
+  padding: 36px 24px 60px;
   align-items: start;
 }
 
@@ -543,8 +546,8 @@ table.ra-t code {
 .dark .rm-scope .ra-eff.m { color: var(--yellow); }
 
 @media (max-width: 1080px) {
-  .ra-main { grid-template-columns: 1fr; }
-  .ra-rail { position: static; }
+  .rm-scope .ra-main { grid-template-columns: 1fr; }
+  .rm-scope .ra-rail { position: static; }
 }
 
 /* ═══ Phone preview ═══ */
