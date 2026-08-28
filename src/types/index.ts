@@ -51,7 +51,6 @@ export interface NewTransaction {
 }
 
 export interface TenantFeatures {
-  canAddTokens: boolean;
   canViewRounds: boolean;
 }
 
