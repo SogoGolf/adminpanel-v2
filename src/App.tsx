@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { GolferLookup } from './pages/GolferLookup';
+import { firstAccessibleRoute } from './config/featureRoutes';
 import { Golfers } from './pages/Golfers';
 import { GolferDetail } from './pages/GolferDetail';
 import { Rounds } from './pages/Rounds';
@@ -30,7 +30,6 @@ import './index.css';
 
 // Map features to menu items
 const allMenuItems = [
-  { path: '/', label: 'Golfer Lookup', feature: 'golfer-lookup' },
   { path: '/golfers', label: 'Golfers', feature: 'golfers' },
   { path: '/rounds', label: 'Rounds', feature: 'rounds' },
   { path: '/closed-comps', label: 'Closed Comps', feature: 'closed-comps' },
@@ -199,6 +198,13 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// The app no longer has a page of its own at "/", so send each admin to the
+// first section their permissions allow.
+function HomeRedirect() {
+  const { adminUser } = useAuth();
+  return <Navigate to={firstAccessibleRoute(adminUser)} replace />;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -206,10 +212,8 @@ function AppRoutes() {
       <Route
         path="/"
         element={
-          <ProtectedRoute requiredFeature="golfer-lookup">
-            <Layout>
-              <GolferLookup />
-            </Layout>
+          <ProtectedRoute>
+            <HomeRedirect />
           </ProtectedRoute>
         }
       />

@@ -1,14 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-
-// Map features to their routes
-const featureRoutes: Record<string, string> = {
-  'golfer-lookup': '/',
-  'golfers': '/golfers',
-  'rounds': '/rounds',
-  'notifications': '/notifications',
-  'admin-users': '/admin/users',
-};
+import { firstAccessibleRoute } from '../config/featureRoutes';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -18,17 +10,6 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requiredFeature, requireSuperAdmin }: ProtectedRouteProps) {
   const { user, adminUser, loading, permissionsLoading, permissionsError, hasFeature, isSuperAdmin, signOut } = useAuth();
-
-  // Get the first route the user has access to
-  const getFirstAccessibleRoute = (): string => {
-    if (!adminUser) return '/login';
-    for (const feature of adminUser.features) {
-      if (featureRoutes[feature]) {
-        return featureRoutes[feature];
-      }
-    }
-    return '/login';
-  };
 
   // Show loading while Firebase auth is initializing
   if (loading) {
@@ -76,15 +57,13 @@ export function ProtectedRoute({ children, requiredFeature, requireSuperAdmin }:
 
   // Check super admin access if required
   if (requireSuperAdmin && !isSuperAdmin()) {
-    const firstAccessibleRoute = getFirstAccessibleRoute();
-    return <Navigate to={firstAccessibleRoute} replace />;
+    return <Navigate to={firstAccessibleRoute(adminUser)} replace />;
   }
 
   // Check feature access if required
   if (requiredFeature && !hasFeature(requiredFeature)) {
     // Redirect to the first feature the user has access to
-    const firstAccessibleRoute = getFirstAccessibleRoute();
-    return <Navigate to={firstAccessibleRoute} replace />;
+    return <Navigate to={firstAccessibleRoute(adminUser)} replace />;
   }
 
   return <>{children}</>;

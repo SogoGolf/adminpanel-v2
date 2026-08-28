@@ -7,7 +7,6 @@ const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-6133
 
 // Available features for admin users
 const AVAILABLE_FEATURES = [
-  { id: 'golfer-lookup', label: 'Golfer Lookup' },
   { id: 'golfers', label: 'Golfers' },
   { id: 'rounds', label: 'Rounds' },
   { id: 'closed-comps', label: 'Closed Comps' },
