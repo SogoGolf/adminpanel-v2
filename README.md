@@ -14,9 +14,7 @@ Admin panel for managing golfers and tokens in the GolfApp system.
 
 ## Features
 
-- Golfer lookup by GolfLink number
 - View golfer details and token balance
-- Add/debit tokens (Admin Credit/Debit)
 - Transaction history
 - Responsive design (mobile-friendly)
 - Multi-tenant support (white-labeling ready)

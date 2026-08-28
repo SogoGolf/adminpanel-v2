@@ -4,7 +4,6 @@
 Admin panel for the SOGO Golf mobile app - a golf scoring and social app used by golfers across Australia.
 
 **Key Functions:**
-- **Golfer Lookup** - Search golfers by GolfLink number, view their profile, transaction history, and token balance. Admins can add/debit tokens (credits used in the app).
 - **Golfers** - Browse and search all registered golfers with filters.
 - **Rounds** - Monitor golf rounds in real-time. See rounds "in progress" and "submitted" today. Expandable rows show hole-by-hole scorecards.
 - **Closed Comps** - Manage private competitions (see detailed description below).
@@ -56,7 +55,7 @@ src/
 
 ## Features by Permission
 Menu items are controlled by `adminUser.features` array:
-- `golfer-lookup`, `golfers`, `rounds`, `closed-comps`, `notifications`, `admin-users`
+- `golfers`, `rounds`, `closed-comps`, `notifications`, `admin-users`
 - Audit Log is `superAdminOnly` (role-based, not feature-based)
 
 ## Key Patterns
