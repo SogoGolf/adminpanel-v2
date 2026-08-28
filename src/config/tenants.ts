@@ -8,7 +8,6 @@ export const tenants: Record<string, TenantConfig> = {
     logo: '/logos/masseypark.png',
     primaryColor: '#1e5c3a',
     features: {
-      canAddTokens: true,
       canViewRounds: true,
     },
   },
@@ -19,7 +18,6 @@ export const tenants: Record<string, TenantConfig> = {
     logo: '/logos/goldencreek.png',
     primaryColor: '#b8860b',
     features: {
-      canAddTokens: true,
       canViewRounds: false,
     },
   },
@@ -32,7 +30,6 @@ export const defaultTenant: TenantConfig = {
   logo: '',
   primaryColor: '#1f2937',
   features: {
-    canAddTokens: true,
     canViewRounds: false,
   },
 };
