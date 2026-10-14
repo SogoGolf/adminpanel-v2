@@ -10,7 +10,7 @@ Admin panel for managing golfers and tokens in the GolfApp system.
 - **TanStack Table** - Flexible table component
 - **Tailwind CSS** - Styling
 - **Firebase Auth** - Authentication
-- **Azure CosmosDB** - Backend API
+- **MongoDB API** (Google Cloud Run) - Backend API
 
 ## Features
 
@@ -37,7 +37,7 @@ npm install
 Copy `.env.example` to `.env` and configure:
 
 ```bash
-VITE_SOGO_API_URL=https://your-api-url
+VITE_MONGODB_API_URL=https://your-mongodb-api-url
 VITE_FIREBASE_API_KEY=your-firebase-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-project-id
@@ -105,7 +105,7 @@ Tenant configs are in `src/config/tenants.ts`. Each tenant has:
 
 ```
 src/
-├── api/           # API client (CosmosDB)
+├── api/           # API client (MongoDB API)
 ├── components/    # Reusable UI components
 ├── config/        # Tenant configuration
 ├── contexts/      # React contexts (Auth, Tenant)

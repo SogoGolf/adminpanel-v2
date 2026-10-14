@@ -21,16 +21,15 @@ Admin panel for the SOGO Golf mobile app - a golf scoring and social app used by
 - **State:** TanStack React Query (with localStorage persistence)
 - **Tables:** TanStack React Table
 - **Auth:** Firebase Authentication
-- **Backend APIs:**
-  - CosmosDB (Azure) - for golfers, transactions, audit logs
-  - MongoDB API (Google Cloud Run) - for rounds, notifications, closed comps, admin users
-    - **Backend source:** `/Users/angusjohnston/src-dotnet/simplegolf/mongoapi/MongoApi/`
-    - Key files: `Endpoints/RoundEndpoint.cs`, `Endpoints/ClosedCompEndpoint.cs`
+- **Backend API:** MongoDB API (Google Cloud Run) is the ONLY backend - golfers, transactions, rounds, notifications, closed comps, admin users, audit logs
+  - **Backend source:** `/Users/angusjohnston/src-dotnet/simplegolf/mongoapi/MongoApi/`
+  - Key files: `Endpoints/RoundEndpoint.cs`, `Endpoints/ClosedCompEndpoint.cs`
+  - Azure APIM / CosmosDB (`sogo-api.azure-api.net`) is turned off and deleted. Do NOT add calls to it.
 
 ## Key Directories
 ```
 src/
-├── api/              # API clients (cosmosdb.ts, mongodb.ts)
+├── api/              # MongoDB API client (mongodb.ts)
 ├── components/       # Reusable UI components
 ├── contexts/         # React contexts (AuthContext, TenantContext)
 ├── pages/            # Page components
@@ -44,8 +43,7 @@ src/
 |------|---------|
 | `src/App.tsx` | Routes, layout, menu items |
 | `src/contexts/AuthContext.tsx` | Firebase auth + admin permissions |
-| `src/api/cosmosdb.ts` | CosmosDB queries (golfers, transactions, audit logs) |
-| `src/api/mongodb.ts` | MongoDB API calls (rounds, notifications, etc.) |
+| `src/api/mongodb.ts` | MongoDB API calls (golfers, rounds, notifications, closed comps, audit logs, etc.) |
 | `src/pages/Rounds.tsx` | Rounds page with polling for updates |
 | `src/pages/AuditLog.tsx` | Super admin audit log viewer |
 
@@ -60,9 +58,6 @@ Menu items are controlled by `adminUser.features` array:
 
 ## Key Patterns
 
-### API Providers
-Switchable between CosmosDB and MongoDB via `VITE_API_PROVIDER` env var.
-
 ### Query Caching
 React Query with localStorage persistence (`@tanstack/react-query-persist-client`). Cache persists for 24 hours.
 
@@ -70,7 +65,7 @@ React Query with localStorage persistence (`@tanstack/react-query-persist-client
 Polls for count changes every 30 seconds. Shows "Round updates available" notification when counts differ.
 
 ### Audit Logging
-Admin credit/debit transactions are logged to CosmosDB. View via Audit Log page (super admin only).
+Admin actions are logged via the MongoDB API (`/auditlogs`). View via Audit Log page (super admin only).
 
 ## Closed Comps (Private Competitions)
 
@@ -204,10 +199,7 @@ Then apply `roundSelectionMode`:
 
 ## Environment Variables
 ```
-VITE_SOGO_API_URL=https://sogo-api.azure-api.net/sogo-general
-VITE_AZURE_API_KEY=<key>
 VITE_MONGODB_API_URL=https://mongo-api-613362712202.australia-southeast1.run.app
-VITE_API_PROVIDER=cosmosdb
 ```
 
 ## Deployment

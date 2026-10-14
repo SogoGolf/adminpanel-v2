@@ -22,7 +22,6 @@ if [ -f "$TEMP_ENV_FILE" ]; then
 fi
 
 cat > "$TEMP_ENV_FILE" <<'EOF'
-VITE_API_PROVIDER=mongodb
 VITE_MONGODB_API_URL=https://mongo-api-test-613362712202.australia-southeast1.run.app
 VITE_APP_ENV=development
 VITE_ENV_BANNER_TEXT=DEV SITE
