@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { ResetPasswordModal } from '../components/ResetPasswordModal';
 
 import { adminFetch } from '../api/adminAuth';
 
@@ -97,6 +98,22 @@ async function deactivateAdminUser(
     const error = await response.json().catch(() => ({ message: 'Failed to deactivate admin user' }));
     throw new Error(error.message || 'Failed to deactivate admin user');
   }
+}
+
+// Sets a new Firebase password for a Super Admin. adminFetch sends the caller's Firebase ID token.
+// Resolves to the API's confirmation message (it can include a warning), or '' if there was none.
+async function resetAdminUserPassword(id: string, newPassword: string): Promise<string> {
+  const response = await adminFetch(`/admin/users/${encodeURIComponent(id)}/password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ newPassword }),
+  });
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to reset password' }));
+    throw new Error(error.message || 'Failed to reset password');
+  }
+  const result = await response.json().catch(() => ({}));
+  return typeof result.message === 'string' ? result.message : '';
 }
 
 // Form Modal Component
@@ -326,14 +343,23 @@ function AdminUserModal({
 }
 
 export function AdminUsers() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUserData | undefined>();
   const [userToDeactivate, setUserToDeactivate] = useState<AdminUserData | null>(null);
   const [userToReactivate, setUserToReactivate] = useState<AdminUserData | null>(null);
+  const [userToResetPassword, setUserToResetPassword] = useState<AdminUserData | null>(null);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
 
   const userEmail = user?.email || '';
+
+  // Hide the password-reset confirmation after a few seconds.
+  useEffect(() => {
+    if (!resetSuccessMessage) return;
+    const timer = setTimeout(() => setResetSuccessMessage(null), 6000);
+    return () => clearTimeout(timer);
+  }, [resetSuccessMessage]);
 
   // Fetch admin users
   const { data: adminUsers, isLoading, error } = useQuery({
@@ -381,6 +407,27 @@ export function AdminUsers() {
       setUserToReactivate(null);
     },
   });
+
+  // Reset password mutation (Super Admin rows only)
+  const resetPasswordMutation = useMutation({
+    mutationFn: ({ id, newPassword }: { id: string; newPassword: string; email: string; name: string }) =>
+      resetAdminUserPassword(id, newPassword),
+    onSuccess: async (message, variables) => {
+      setUserToResetPassword(null);
+      // Firebase signs the account out everywhere after a password change, so sign out here too.
+      if (variables.email.toLowerCase() === userEmail.toLowerCase()) {
+        await signOut();
+        return;
+      }
+      setResetSuccessMessage(message || `Password updated for ${variables.name}.`);
+    },
+  });
+
+  const openResetPasswordModal = (adminUser: AdminUserData) => {
+    resetPasswordMutation.reset();
+    setResetSuccessMessage(null);
+    setUserToResetPassword(adminUser);
+  };
 
   const handleSave = (formData: AdminUserFormData) => {
     const clubIds = formData.clubIds
@@ -537,6 +584,14 @@ export function AdminUsers() {
                     >
                       Edit
                     </button>
+                    {adminUser.role === 'super_admin' && (
+                      <button
+                        onClick={() => openResetPasswordModal(adminUser)}
+                        className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300 mr-4"
+                      >
+                        Reset Password
+                      </button>
+                    )}
                     {adminUser.email !== userEmail && (
                       <button
                         onClick={() => setUserToDeactivate(adminUser)}
@@ -655,6 +710,31 @@ export function AdminUsers() {
         onCancel={() => setUserToReactivate(null)}
       />
 
+      {/* Reset Password Dialog (mounted fresh each time so its fields start empty) */}
+      {userToResetPassword && (
+        <ResetPasswordModal
+          key={userToResetPassword.id}
+          userName={userToResetPassword.name}
+          userEmail={userToResetPassword.email}
+          isSelf={userToResetPassword.email.toLowerCase() === userEmail.toLowerCase()}
+          isSaving={resetPasswordMutation.isPending}
+          serverError={resetPasswordMutation.error instanceof Error ? resetPasswordMutation.error.message : null}
+          onClose={() => {
+            if (!resetPasswordMutation.isPending) {
+              setUserToResetPassword(null);
+            }
+          }}
+          onSubmit={(newPassword) =>
+            resetPasswordMutation.mutate({
+              id: userToResetPassword.id,
+              newPassword,
+              email: userToResetPassword.email,
+              name: userToResetPassword.name,
+            })
+          }
+        />
+      )}
+
       {/* Error notifications */}
       {(createMutation.error || updateMutation.error || deactivateMutation.error || reactivateMutation.error) && (
         <div className="fixed bottom-4 right-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg max-w-md">
@@ -663,6 +743,23 @@ export function AdminUsers() {
               ? (createMutation.error || updateMutation.error || deactivateMutation.error || reactivateMutation.error)?.message
               : 'An error occurred'}
           </p>
+        </div>
+      )}
+
+      {/* Password reset confirmation */}
+      {resetSuccessMessage && (
+        <div
+          role="status"
+          className="fixed bottom-4 right-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 rounded-lg p-4 shadow-lg max-w-md flex items-start gap-3"
+        >
+          <p className="text-green-700 dark:text-green-400 text-sm">{resetSuccessMessage}</p>
+          <button
+            onClick={() => setResetSuccessMessage(null)}
+            aria-label="Dismiss"
+            className="text-green-700 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 text-sm leading-none"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>
