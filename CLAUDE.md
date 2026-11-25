@@ -20,7 +20,7 @@ Admin panel for the SOGO Golf mobile app - a golf scoring and social app used by
 - **Styling:** Tailwind CSS
 - **State:** TanStack React Query (with localStorage persistence)
 - **Tables:** TanStack React Table
-- **Auth:** Firebase Authentication
+- **Auth:** Firebase Authentication. Production signs in with the `sogo-golf` project; the DEV site uses `sogogolf-dev` (own accounts and passwords), set by the `VITE_FIREBASE_*` values in `scripts/deploy-dev.sh` (`src/config/firebaseConfig.ts`).
 - **Backend APIs:**
   - CosmosDB (Azure) - for golfers, transactions, audit logs
   - MongoDB API (Google Cloud Run) - for rounds, notifications, closed comps, admin users

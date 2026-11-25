@@ -1,14 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { resolveFirebaseConfig } from './config/firebaseConfig';
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDvfxHglAehaICk_IveIAH1DCD1wHYmFm4",
-  authDomain: "sogo-golf.firebaseapp.com",
-  databaseURL: "https://sogo-golf.firebaseio.com",
-  projectId: "sogo-golf",
-  storageBucket: "sogo-golf.appspot.com",
-  messagingSenderId: "719518718236",
-};
-
-const app = initializeApp(firebaseConfig);
+// Production builds set no VITE_FIREBASE_* values and use sogo-golf; the DEV site sets them (see scripts/deploy-dev.sh).
+const app = initializeApp(resolveFirebaseConfig(import.meta.env));
 export const auth = getAuth(app);
