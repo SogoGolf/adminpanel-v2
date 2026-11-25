@@ -86,13 +86,12 @@ function settingsToForm(settings: MobileAppVersionPlatformSettings | null | unde
   };
 }
 
-function formToContent(form: FormState, updatedBy: string | undefined, target: ReleaseTarget): ReleaseManagerContentRequest {
+function formToContent(form: FormState, target: ReleaseTarget): ReleaseManagerContentRequest {
   const content: ReleaseManagerContentRequest = {
     minimumRequiredVersion: form.minimumRequiredVersion.trim(),
     forceUpdateEnabled: form.forceUpdateEnabled,
     optionalUpdatePromptEnabled: form.optionalUpdatePromptEnabled,
     updateMessage: form.updateMessage.trim(),
-    updatedBy,
   };
   if (target === 'both') {
     content.androidMinimumRequiredVersion = form.androidMinimumRequiredVersion.trim();
@@ -375,7 +374,7 @@ export default function ReleaseManager() {
   const queryKey = ['releaseManagerConfig', adminEmail];
   const { data, isLoading, error: loadError, refetch } = useQuery({
     queryKey,
-    queryFn: () => getReleaseManagerConfig(adminEmail),
+    queryFn: () => getReleaseManagerConfig(),
     enabled: Boolean(adminEmail),
     // This form edits a production kill switch — never trust a cached copy.
     staleTime: 0,
@@ -511,19 +510,19 @@ export default function ReleaseManager() {
   };
 
   const draftMutation = useMutation({
-    mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(adminEmail, vars.target, vars.content),
+    mutationFn: (vars: MutationVars) => saveReleaseManagerDraft(vars.target, vars.content),
     onSuccess: (response, vars) => applyResponse(response, vars, 'Draft saved'),
     onError: mutationError,
   });
 
   const publishMutation = useMutation({
-    mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(adminEmail, vars.target, vars.content),
+    mutationFn: (vars: MutationVars) => publishReleaseManagerConfig(vars.target, vars.content),
     onSuccess: (response, vars) => applyResponse(response, vars, `Published to ${labelOf(vars.target)}`),
     onError: mutationError,
   });
 
   const discardMutation = useMutation({
-    mutationFn: (vars: { target: ReleaseTarget }) => discardReleaseManagerDraft(adminEmail, vars.target),
+    mutationFn: (vars: { target: ReleaseTarget }) => discardReleaseManagerDraft(vars.target),
     onSuccess: (response, vars) => applyResponse(response, vars, 'Draft discarded'),
     onError: mutationError,
   });
@@ -555,7 +554,7 @@ export default function ReleaseManager() {
     if (form.forceUpdateEnabled || (target === 'both' && diverged)) {
       setConfirmPublish(true);
     } else {
-      publishMutation.mutate({ target, content: formToContent(form, adminEmail, target) });
+      publishMutation.mutate({ target, content: formToContent(form, target) });
     }
   };
 
@@ -825,7 +824,7 @@ export default function ReleaseManager() {
                   <button
                     type="button"
                     className="btn ghost"
-                    onClick={() => draftMutation.mutate({ target, content: formToContent(form, adminEmail, target) })}
+                    onClick={() => draftMutation.mutate({ target, content: formToContent(form, target) })}
                     disabled={busy}
                   >
                     {draftMutation.isPending ? 'Saving…' : 'Save draft'}
@@ -973,7 +972,7 @@ export default function ReleaseManager() {
         variant="danger"
         onConfirm={() => {
           setConfirmPublish(false);
-          publishMutation.mutate({ target, content: formToContent(form, adminEmail, target) });
+          publishMutation.mutate({ target, content: formToContent(form, target) });
         }}
         onCancel={() => setConfirmPublish(false)}
       />

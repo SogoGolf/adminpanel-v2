@@ -7,8 +7,9 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { adminFetch } from '../api/adminAuth';
+import { useQueryClient } from '@tanstack/react-query';
 
-const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
 
 // Admin user permissions from MongoDB
 export interface AdminUser {
@@ -36,22 +37,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-async function fetchAdminUser(email: string): Promise<AdminUser | null> {
-  try {
-    const response = await fetch(`${API_BASE}/admin/me?email=${encodeURIComponent(email)}`);
-    if (!response.ok) {
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error('Failed to fetch admin permissions');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching admin user:', error);
-    throw error;
-  }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -59,37 +44,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissionsLoading, setPermissionsLoading] = useState(false);
   const [permissionsError, setPermissionsError] = useState<string | null>(null);
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
+    let revision = 0;
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const current = ++revision;
+      queryClient.removeQueries({ predicate: (query) =>
+        ['clubNotifications', 'auditLogs', 'adminUsers'].includes(String(query.queryKey[0]))
+      });
       setUser(firebaseUser);
-
-      if (firebaseUser?.email) {
-        setPermissionsLoading(true);
-        setPermissionsError(null);
-        try {
-          const admin = await fetchAdminUser(firebaseUser.email);
-          if (admin) {
-            setAdminUser(admin);
-          } else {
-            setAdminUser(null);
-            setPermissionsError('You do not have admin access. Please contact an administrator.');
-          }
-        } catch {
-          setAdminUser(null);
-          setPermissionsError('Failed to load permissions. Please try again.');
-        } finally {
-          setPermissionsLoading(false);
-        }
-      } else {
-        setAdminUser(null);
-        setPermissionsError(null);
+      setAdminUser(null);
+      setPermissionsError(null);
+      setPermissionsLoading(!!firebaseUser);
+      if (!firebaseUser) {
+        setLoading(false);
+        return;
       }
-
-      setLoading(false);
+      try {
+        const response = await adminFetch('/admin/me', {}, firebaseUser.uid);
+        if (response.status === 403 || response.status === 404) {
+          throw new Error('You do not have admin access. Please contact an administrator.');
+        }
+        if (!response.ok) throw new Error('Failed to load permissions. Please try again.');
+        const admin: AdminUser = await response.json();
+        if (current === revision && admin.isActive) setAdminUser(admin);
+      } catch (error) {
+        if (current === revision) setPermissionsError(error instanceof Error ? error.message : 'Failed to load permissions.');
+      } finally {
+        if (current === revision) {
+          setPermissionsLoading(false);
+          setLoading(false);
+        }
+      }
     });
 
-    return unsubscribe;
-  }, []);
+    return () => {
+      revision++;
+      unsubscribe();
+    };
+  }, [queryClient]);
 
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
@@ -103,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasFeature = (feature: string): boolean => {
     if (!adminUser) return false;
-    return adminUser.features.includes(feature);
+    return (feature === 'notifications' && adminUser.role === 'super_admin') || adminUser.features.includes(feature);
   };
 
   const isSuperAdmin = (): boolean => {
