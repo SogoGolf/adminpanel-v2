@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { adminHeaders } from './adminAuth';
 import type {
   Golfer,
   Transaction,
@@ -158,49 +159,44 @@ export async function getScoreTypes(): Promise<ScoreType[]> {
   return response.data;
 }
 
-export async function getReleaseManagerConfig(
-  requestingUserEmail: string,
-): Promise<ReleaseManagerConfigResponse> {
+export async function getReleaseManagerConfig(): Promise<ReleaseManagerConfigResponse> {
   const response = await api.get<ReleaseManagerConfigResponse>(
     '/mobileAppVersionConfig/admin',
-    { params: { requestingUserEmail } },
+    { headers: await adminHeaders() },
   );
   return response.data;
 }
 
 export async function saveReleaseManagerDraft(
-  requestingUserEmail: string,
   target: ReleaseTarget,
   content: ReleaseManagerContentRequest,
 ): Promise<ReleaseManagerConfigResponse> {
   const response = await api.put<ReleaseManagerConfigResponse>(
     `/mobileAppVersionConfig/admin/${target}/draft`,
     content,
-    { params: { requestingUserEmail } },
+    { headers: await adminHeaders() },
   );
   return response.data;
 }
 
 export async function publishReleaseManagerConfig(
-  requestingUserEmail: string,
   target: ReleaseTarget,
   content: ReleaseManagerContentRequest,
 ): Promise<ReleaseManagerConfigResponse> {
   const response = await api.put<ReleaseManagerConfigResponse>(
     `/mobileAppVersionConfig/admin/${target}/publish`,
     content,
-    { params: { requestingUserEmail } },
+    { headers: await adminHeaders() },
   );
   return response.data;
 }
 
 export async function discardReleaseManagerDraft(
-  requestingUserEmail: string,
   target: ReleaseTarget,
 ): Promise<ReleaseManagerConfigResponse> {
   const response = await api.delete<ReleaseManagerConfigResponse>(
     `/mobileAppVersionConfig/admin/${target}/draft`,
-    { params: { requestingUserEmail } },
+    { headers: await adminHeaders() },
   );
   return response.data;
 }
@@ -325,79 +321,6 @@ export async function getRoundsCounts(clubIds?: string[]): Promise<RoundsCountRe
 
 export async function getRoundById(id: string): Promise<RoundDetail> {
   const response = await api.get<RoundDetail>(`/rounds/${id}`);
-  return response.data;
-}
-
-// Notification API functions
-export interface AudienceCountParams {
-  audienceType: 'rounds-in-progress' | 'gender' | 'club' | 'state' | 'single';
-  gender?: string;
-  clubId?: string;
-  state?: string;
-  golflinkNo?: string;
-  clubIds?: string[];
-  requestingUserEmail: string;
-}
-
-export interface AudienceCountResponse {
-  count: number;
-  emails: string[];
-}
-
-export async function getNotificationAudienceCount(params: AudienceCountParams): Promise<AudienceCountResponse> {
-  const { audienceType, gender, clubId, state, golflinkNo, clubIds, requestingUserEmail } = params;
-  const response = await api.get<AudienceCountResponse>('/notifications/audience-count', {
-    params: {
-      audienceType,
-      gender: gender || undefined,
-      clubId: clubId || undefined,
-      state: state || undefined,
-      golflinkNo: golflinkNo || undefined,
-      clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
-      requestingUserEmail,
-    },
-  });
-  return response.data;
-}
-
-export interface SendNotificationParams {
-  title: string;
-  message: string;
-  audienceType: 'rounds-in-progress' | 'gender' | 'club' | 'state' | 'single';
-  gender?: string;
-  clubId?: string;
-  state?: string;
-  golflinkNo?: string;
-  clubIds?: string[];
-  requestingUserEmail: string;
-}
-
-export interface SendNotificationResponse {
-  success: boolean;
-  message: string;
-  recipientCount: number;
-  oneSignalResponse?: string;
-}
-
-export async function sendNotification(params: SendNotificationParams): Promise<SendNotificationResponse> {
-  const { title, message, audienceType, gender, clubId, state, golflinkNo, clubIds, requestingUserEmail } = params;
-  const response = await api.post<SendNotificationResponse>('/notifications/send',
-    {
-      title,
-      message,
-      audienceType,
-      gender: gender || undefined,
-      clubId: clubId || undefined,
-      state: state || undefined,
-      golflinkNo: golflinkNo || undefined,
-    },
-    {
-      params: {
-        requestingUserEmail,
-        clubIds: clubIds && clubIds.length > 0 ? clubIds.join(',') : undefined,
-      },
-    }
-  );
   return response.data;
 }
 
@@ -545,6 +468,7 @@ export interface CreateAuditLogParams {
 export async function getAuditLogs(params: GetAuditLogsParams = {}): Promise<PaginatedResponse<AuditLog>> {
   const { page = 1, pageSize = 20, action, fromDate, toDate } = params;
   const response = await api.get<PaginatedResponse<AuditLog>>('/auditlogs', {
+    headers: await adminHeaders(),
     params: {
       page,
       pageSize,
@@ -557,6 +481,6 @@ export async function getAuditLogs(params: GetAuditLogsParams = {}): Promise<Pag
 }
 
 export async function createAuditLog(params: CreateAuditLogParams): Promise<AuditLog> {
-  const response = await api.post<AuditLog>('/auditlogs', params);
+  const response = await api.post<AuditLog>('/auditlogs', params, { headers: await adminHeaders() });
   return response.data;
 }
