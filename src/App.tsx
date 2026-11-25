@@ -332,12 +332,12 @@ function App() {
           persistOptions={{
             persister,
             maxAge: 1000 * 60 * 60 * 24,
-            buster: `${cacheNamespace}__club-privacy-v1`,
+            buster: cacheNamespace,
             dehydrateOptions: {
-              // Keep sensitive admin records in the signed-in session only.
+              // The release manager form must never hydrate from a stale
+              // localStorage copy of the app-update config.
               shouldDehydrateQuery: (query) =>
-                query.state.status === 'success' &&
-                !['releaseManagerConfig', 'clubNotifications', 'adminUsers', 'auditLogs'].includes(String(query.queryKey[0])),
+                query.state.status === 'success' && query.queryKey[0] !== 'releaseManagerConfig',
             },
           }}
         >

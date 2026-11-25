@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 
-import { adminFetch } from '../api/adminAuth';
+const API_BASE = import.meta.env.VITE_MONGODB_API_URL || 'https://mongo-api-613362712202.australia-southeast1.run.app';
 
 // Available features for admin users
 const AVAILABLE_FEATURES = [
@@ -37,9 +37,9 @@ interface AdminUserFormData {
 }
 
 // API functions
-async function fetchAdminUsers(): Promise<AdminUserData[]> {
-  const response = await adminFetch(
-    '/admin/users'
+async function fetchAdminUsers(requestingUserEmail: string): Promise<AdminUserData[]> {
+  const response = await fetch(
+    `${API_BASE}/admin/users?requestingUserEmail=${encodeURIComponent(requestingUserEmail)}`
   );
   if (!response.ok) {
     throw new Error('Failed to fetch admin users');
@@ -48,10 +48,11 @@ async function fetchAdminUsers(): Promise<AdminUserData[]> {
 }
 
 async function createAdminUser(
+  requestingUserEmail: string,
   data: Omit<AdminUserData, 'id' | 'isActive' | 'createdAt' | 'updatedAt'>
 ): Promise<AdminUserData> {
-  const response = await adminFetch(
-    '/admin/users',
+  const response = await fetch(
+    `${API_BASE}/admin/users?requestingUserEmail=${encodeURIComponent(requestingUserEmail)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -66,11 +67,12 @@ async function createAdminUser(
 }
 
 async function updateAdminUser(
+  requestingUserEmail: string,
   id: string,
   data: Partial<AdminUserData>
 ): Promise<AdminUserData> {
-  const response = await adminFetch(
-    `/admin/users/${encodeURIComponent(id)}`,
+  const response = await fetch(
+    `${API_BASE}/admin/users/${id}?requestingUserEmail=${encodeURIComponent(requestingUserEmail)}`,
     {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -85,10 +87,11 @@ async function updateAdminUser(
 }
 
 async function deactivateAdminUser(
+  requestingUserEmail: string,
   id: string
 ): Promise<void> {
-  const response = await adminFetch(
-    `/admin/users/${encodeURIComponent(id)}`,
+  const response = await fetch(
+    `${API_BASE}/admin/users/${id}?requestingUserEmail=${encodeURIComponent(requestingUserEmail)}`,
     {
       method: 'DELETE',
     }
@@ -338,14 +341,14 @@ export function AdminUsers() {
   // Fetch admin users
   const { data: adminUsers, isLoading, error } = useQuery({
     queryKey: ['adminUsers', userEmail],
-    queryFn: fetchAdminUsers,
+    queryFn: () => fetchAdminUsers(userEmail),
     enabled: !!userEmail,
   });
 
   // Create mutation
   const createMutation = useMutation({
     mutationFn: (data: Omit<AdminUserData, 'id' | 'isActive' | 'createdAt' | 'updatedAt'>) =>
-      createAdminUser(data),
+      createAdminUser(userEmail, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       setIsModalOpen(false);
@@ -356,7 +359,7 @@ export function AdminUsers() {
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<AdminUserData> }) =>
-      updateAdminUser(id, data),
+      updateAdminUser(userEmail, id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       setIsModalOpen(false);
@@ -366,7 +369,7 @@ export function AdminUsers() {
 
   // Deactivate mutation
   const deactivateMutation = useMutation({
-    mutationFn: (id: string) => deactivateAdminUser(id),
+    mutationFn: (id: string) => deactivateAdminUser(userEmail, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       setUserToDeactivate(null);
@@ -375,7 +378,7 @@ export function AdminUsers() {
 
   // Reactivate mutation
   const reactivateMutation = useMutation({
-    mutationFn: (id: string) => updateAdminUser(id, { isActive: true }),
+    mutationFn: (id: string) => updateAdminUser(userEmail, id, { isActive: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
       setUserToReactivate(null);
