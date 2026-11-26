@@ -24,6 +24,7 @@ import {
   type FeatureIconKey,
 } from '../components/release-manager/icons';
 import { UpdatePromptPreview } from '../components/release-manager/UpdatePromptPreview';
+import { editingVersionRows, liveVersionRows, type PlatformVersionRow } from '../utils/releaseVersions';
 import sgLogo from '../assets/simple_golf_logo.png';
 import '../components/release-manager/releaseManager.css';
 
@@ -349,6 +350,21 @@ function SkeletonCard({ rows }: { rows: number }) {
   );
 }
 
+/** Header tile value: one "iOS 3.8.0" / "Android 3.8.1" line per platform, or a dash while loading. */
+function PlatformVersions({ rows }: { rows: PlatformVersionRow[] | null }) {
+  if (!rows) return <div className="v num">—</div>;
+  return (
+    <div className="v num ra-pv">
+      {rows.map((row) => (
+        <div key={row.platform}>
+          <span className="p">{row.platform}</span>
+          {row.version}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── The screen ──
 
 export default function ReleaseManager() {
@@ -575,13 +591,12 @@ export default function ReleaseManager() {
     : 'Not published from this screen yet';
 
   const configReady = !isLoading && !loadError && Boolean(data);
-  const liveNow = !data
-    ? '—'
-    : target === 'both'
-      ? data.ios.live.minimumRequiredVersion === data.android.live.minimumRequiredVersion
-        ? data.ios.live.minimumRequiredVersion || '—'
-        : `${data.ios.live.minimumRequiredVersion || '—'} · ${data.android.live.minimumRequiredVersion || '—'}`
-      : sideOf(data, target).live.minimumRequiredVersion || '—';
+  const liveRows = data
+    ? liveVersionRows(data.ios.live.minimumRequiredVersion, data.android.live.minimumRequiredVersion)
+    : null;
+  const editingRows = configReady
+    ? editingVersionRows(target, form.minimumRequiredVersion, form.androidMinimumRequiredVersion)
+    : null;
   const previewVersion = form.minimumRequiredVersion || '—';
   const mode = form.forceUpdateEnabled ? 'Forced' : form.optionalUpdatePromptEnabled ? 'Optional' : 'Off';
 
@@ -610,17 +625,11 @@ export default function ReleaseManager() {
             <div className="ra-live">
               <div>
                 <div className="k">Live now</div>
-                <div className="v num">{liveNow}</div>
+                <PlatformVersions rows={liveRows} />
               </div>
               <div>
                 <div className="k">Editing</div>
-                <div className="v num">
-                  {!configReady
-                    ? '—'
-                    : target === 'both' && form.minimumRequiredVersion !== form.androidMinimumRequiredVersion
-                      ? `${form.minimumRequiredVersion || '—'} · ${form.androidMinimumRequiredVersion || '—'}`
-                      : form.minimumRequiredVersion || '—'}
-                </div>
+                <PlatformVersions rows={editingRows} />
               </div>
               <div>
                 <div className="k">Mode</div>
