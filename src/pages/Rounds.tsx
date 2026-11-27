@@ -12,6 +12,7 @@ import {
 import { getAllRounds, getRoundById, getRoundsCounts, getScoreTypes } from '../api/mongodb';
 import { roundsViewStorageKey } from '../config/environment';
 import { useAuth } from '../contexts/AuthContext';
+import { TodayVersionChips } from '../components/TodayVersionChips';
 import type { RoundSummary, HoleScore } from '../types';
 
 type HoleRangeValue = '' | '1-9' | '10-18' | '18';
@@ -907,9 +908,11 @@ export function Rounds() {
               <div>
                 In Progress for today: {data.todayInProgressCount} (iOS: {data.todayInProgressIosCount}, Android: {data.todayInProgressAndroidCount})
               </div>
+              <TodayVersionChips counts={data.todayInProgressByVersion} label="In progress today by app version" />
               <div>
                 Submitted today: {data.todaySubmittedCount} (iOS: {data.todaySubmittedIosCount}, Android: {data.todaySubmittedAndroidCount})
               </div>
+              <TodayVersionChips counts={data.todaySubmittedByVersion} label="Submitted today by app version" />
               <div className="text-xs text-yellow-600 dark:text-yellow-400">
                 Last updated: {formatLastUpdatedTimestamp(dataUpdatedAt)}
               </div>
