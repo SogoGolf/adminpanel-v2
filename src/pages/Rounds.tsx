@@ -7,12 +7,20 @@ import {
   flexRender,
   createColumnHelper,
   type Column,
+  type OnChangeFn,
   type SortingState,
 } from '@tanstack/react-table';
 import { getAllRounds, getRoundById, getRoundsCounts, getScoreTypes } from '../api/mongodb';
 import { roundsViewStorageKey } from '../config/environment';
 import { useAuth } from '../contexts/AuthContext';
 import { TodayVersionChips } from '../components/TodayVersionChips';
+import {
+  getApiErrorMessage,
+  getApiErrorStatus,
+  hasPartialRoundDate,
+  needsRoundDateWindow,
+  withRoundDateWindow,
+} from '../utils/roundsDateWindow';
 import type { RoundSummary, HoleScore } from '../types';
 
 type HoleRangeValue = '' | '1-9' | '10-18' | '18';
@@ -564,7 +572,9 @@ export function Rounds() {
   const [initialViewState] = useState(getInitialViewState);
 
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<RoundsFilterState>(initialViewState.filters);
+  const [filters, setFilters] = useState<RoundsFilterState>(() =>
+    withRoundDateWindow(initialViewState.filters, initialViewState.sorting[0]?.id, getTodayDateValue())
+  );
   const [sorting, setSorting] = useState<SortingState>(initialViewState.sorting);
   const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -608,8 +618,18 @@ export function Rounds() {
   // Get clubIds from admin user for multi-tenant filtering
   const clubIds = adminUser?.clubIds;
 
+  // A sort or filter change that fills in the date window updates `filters` at once but `debouncedFilters` 500 ms
+  // later. Wait for it instead of sending the search without dates, which the API refuses. Also wait while a date
+  // box holds a year still being typed (0002, 0202), which would read every round.
+  const isRoundsSearchOnHold =
+    (needsRoundDateWindow(debouncedFilters, activeSort.id) && !needsRoundDateWindow(filters, activeSort.id)) ||
+    hasPartialRoundDate(debouncedFilters);
+
   const { data, dataUpdatedAt, isLoading, isFetching, isPlaceholderData, isError, error } = useQuery({
     queryKey: ['rounds', page, pageSize, debouncedFilters, activeSort, clubIds],
+    enabled: !isRoundsSearchOnHold,
+    // A 400 is the API asking for a date range: trying again won't help.
+    retry: (failureCount, queryError) => getApiErrorStatus(queryError) !== 400 && failureCount < 1,
     queryFn: () => getAllRounds({
       page,
       pageSize,
@@ -691,8 +711,20 @@ export function Rounds() {
     sessionStorage.setItem(roundsViewStorageKey, JSON.stringify({ filters }));
   }, [filters]);
 
+  // Every change except typing in the From date fills in the last 30 days when the search needs a date range.
+  // The From date is left alone so that clearing it mid-edit doesn't snap back.
   const handleFilterChange = <K extends keyof RoundsFilterState>(key: K, value: RoundsFilterState[K]) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value };
+      return key === 'roundDateFrom' ? next : withRoundDateWindow(next, activeSort.id, todayDateValue);
+    });
+  };
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const nextSorting = typeof updater === 'function' ? updater(sorting) : updater;
+    const nextSortId = (nextSorting[0] ?? DEFAULT_SORTING[0]).id;
+    setSorting(nextSorting);
+    setFilters((prev) => withRoundDateWindow(prev, nextSortId, todayDateValue));
   };
 
   const toggleSingleDayRoundDate = (dateValue: string) => {
@@ -709,7 +741,7 @@ export function Rounds() {
   };
 
   const clearAllFilters = () => {
-    setFilters(DEFAULT_FILTERS);
+    setFilters(withRoundDateWindow(DEFAULT_FILTERS, activeSort.id, todayDateValue));
     setIsAdvancedFiltersOpen(false);
     setPage(1);
   };
@@ -882,7 +914,7 @@ export function Rounds() {
     state: {
       sorting,
     },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
   });
 
   const hasActiveFilters = Object.values(filters).some((value) => value !== '');
@@ -931,7 +963,7 @@ export function Rounds() {
       {isError && !data && (
         <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <p className="text-red-700 dark:text-red-400">
-            Error loading rounds: {error instanceof Error ? error.message : 'Unknown error'}
+            Error loading rounds: {getApiErrorMessage(error)}
           </p>
         </div>
       )}
