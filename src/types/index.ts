@@ -159,6 +159,15 @@ export interface RoundSummary {
   isSubmitted: boolean | null;
 }
 
+/** Today's rounds on one platform and app version, from /rounds/search. */
+export interface TodayVersionCount {
+  /** 'ios' or 'android'. */
+  platform: string;
+  /** Display label, e.g. "3.8.1 (39)", or "Unknown" when the round has no app version. */
+  version: string;
+  count: number;
+}
+
 export interface RoundsPaginatedResponse extends PaginatedResponse<RoundSummary> {
   todayInProgressCount: number;
   todayInProgressIosCount: number;
@@ -166,6 +175,9 @@ export interface RoundsPaginatedResponse extends PaginatedResponse<RoundSummary>
   todaySubmittedCount: number;
   todaySubmittedIosCount: number;
   todaySubmittedAndroidCount: number;
+  /** Missing from older APIs and from cached responses saved before they existed. */
+  todayInProgressByVersion?: TodayVersionCount[];
+  todaySubmittedByVersion?: TodayVersionCount[];
 }
 
 export interface HoleScore {
